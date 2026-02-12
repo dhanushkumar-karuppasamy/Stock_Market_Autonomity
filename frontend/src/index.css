@@ -1,0 +1,253 @@
+/* ===== Reset & base styles ===== */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+  background: #0f1117;
+  color: #e0e0e0;
+  line-height: 1.5;
+}
+
+h1, h2, h3 {
+  color: #ffffff;
+}
+
+/* ===== Layout ===== */
+.app-container {
+  max-width: 1440px;
+  margin: 0 auto;
+  padding: 16px 24px;
+}
+
+.app-header {
+  text-align: center;
+  padding: 12px 0 20px;
+  border-bottom: 1px solid #2a2d3a;
+  margin-bottom: 20px;
+}
+
+.app-header h1 {
+  font-size: 1.6rem;
+  letter-spacing: 0.5px;
+}
+
+.app-header p {
+  color: #8a8fa8;
+  font-size: 0.85rem;
+}
+
+/* ===== Grid ===== */
+.main-grid {
+  display: grid;
+  grid-template-columns: 300px 1fr;
+  gap: 20px;
+}
+
+.right-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+/* ===== Card ===== */
+.card {
+  background: #1a1d2e;
+  border: 1px solid #2a2d3a;
+  border-radius: 10px;
+  padding: 16px;
+}
+
+.card h2 {
+  font-size: 1rem;
+  margin-bottom: 12px;
+  color: #7eb8ff;
+}
+
+/* ===== Controls ===== */
+.controls label {
+  display: block;
+  margin-bottom: 10px;
+  font-size: 0.85rem;
+  color: #9ca3af;
+}
+
+.controls select,
+.controls input {
+  width: 100%;
+  padding: 8px 10px;
+  border-radius: 6px;
+  border: 1px solid #3a3f55;
+  background: #12141e;
+  color: #e0e0e0;
+  font-size: 0.85rem;
+  margin-top: 4px;
+}
+
+.btn-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 14px;
+}
+
+.btn {
+  padding: 8px 16px;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.82rem;
+  font-weight: 600;
+  transition: opacity 0.15s;
+}
+
+.btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.btn-primary { background: #3b82f6; color: #fff; }
+.btn-success { background: #22c55e; color: #fff; }
+.btn-warning { background: #eab308; color: #000; }
+.btn-danger  { background: #ef4444; color: #fff; }
+
+.status-text {
+  margin-top: 12px;
+  font-size: 0.82rem;
+  color: #9ca3af;
+}
+
+.status-text .badge {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-weight: 600;
+  margin-left: 4px;
+}
+
+.badge-running  { background: #22c55e33; color: #22c55e; }
+.badge-paused   { background: #eab30833; color: #eab308; }
+.badge-finished { background: #3b82f633; color: #3b82f6; }
+.badge-idle     { background: #6b728033; color: #9ca3af; }
+
+/* ===== Agents table ===== */
+.agents-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 12px;
+}
+
+.agent-card {
+  background: #12141e;
+  border: 1px solid #2a2d3a;
+  border-radius: 8px;
+  padding: 12px;
+}
+
+.agent-card h3 {
+  font-size: 0.9rem;
+  margin-bottom: 6px;
+  color: #a78bfa;
+}
+
+.agent-card .row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.8rem;
+  padding: 2px 0;
+}
+
+.agent-card .row .label {
+  color: #6b7280;
+}
+
+.agent-card .reason {
+  margin-top: 4px;
+  font-size: 0.75rem;
+  color: #9ca3af;
+  font-style: italic;
+  word-break: break-word;
+}
+
+/* ===== Tables ===== */
+.log-table-wrapper {
+  max-height: 320px;
+  overflow-y: auto;
+}
+
+.log-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.78rem;
+}
+
+.log-table th {
+  text-align: left;
+  padding: 6px 8px;
+  background: #12141e;
+  color: #7eb8ff;
+  position: sticky;
+  top: 0;
+  z-index: 1;
+}
+
+.log-table td {
+  padding: 5px 8px;
+  border-top: 1px solid #1e2030;
+  color: #c9cdd8;
+}
+
+.log-table tr:hover td {
+  background: #1e2030;
+}
+
+/* Decision badges */
+.decision-approve { color: #22c55e; font-weight: 600; }
+.decision-warn    { color: #eab308; font-weight: 600; }
+.decision-block   { color: #ef4444; font-weight: 600; }
+
+/* ===== Filter row ===== */
+.filter-row {
+  margin-bottom: 10px;
+}
+
+.filter-row select {
+  padding: 5px 8px;
+  border-radius: 5px;
+  border: 1px solid #3a3f55;
+  background: #12141e;
+  color: #e0e0e0;
+  font-size: 0.8rem;
+}
+
+/* ===== Chart wrappers ===== */
+.charts-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+}
+
+@media (max-width: 1000px) {
+  .main-grid {
+    grid-template-columns: 1fr;
+  }
+  .charts-row {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ===== Error ===== */
+.error-banner {
+  background: #ef444422;
+  border: 1px solid #ef4444;
+  color: #fca5a5;
+  padding: 10px 14px;
+  border-radius: 8px;
+  margin-bottom: 16px;
+  font-size: 0.85rem;
+}

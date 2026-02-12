@@ -1,0 +1,142 @@
+"""
+Regulator / Compliance module.
+Reviews every proposed trade for rule violations before execution.
+"""
+
+
+class RegulatorAgent:
+    """
+    Enforces trading rules and compliance constraints.
+
+    Rules:
+    1. Max position size: no agent may hold > 30 % of portfolio in one ticker.
+    2. Max order size: single order cannot exceed 10 % of recent average volume.
+    3. Manipulation detection:
+       - Large burst orders from adversarial agents in low-volume periods.
+       - Rapid-fire large orders in short succession.
+    """
+
+    MAX_POSITION_PCT = 0.30        # max 30 % of portfolio value in one position
+    MAX_ORDER_VOLUME_PCT = 0.10    # max 10 % of recent avg volume per trade
+    BURST_WINDOW = 5               # look-back window (steps) for burst detection
+    BURST_THRESHOLD = 3            # max large orders in window
+
+    def __init__(self):
+        # Track recent large orders per agent for burst detection
+        self._recent_orders: dict[str, list[int]] = {}   # agent -> list of steps
+
+    def review_trade(
+        self,
+        agent_name: str,
+        action: dict,
+        agent_state: dict,
+        market_state: dict,
+        current_step: int = 0,
+    ) -> dict:
+        """
+        Review a proposed trade.
+
+        Args:
+            agent_name:   name of the agent proposing the trade
+            action:       {"type": "BUY"/"SELL"/"HOLD", "ticker": str, "quantity": int}
+            agent_state:  {"cash": float, "positions": dict, "portfolio_value": float}
+            market_state: current_bar dict (Close, Volume, Volatility, …)
+            current_step: current simulation step
+
+        Returns:
+            {
+                "decision": "APPROVE" | "WARN" | "BLOCK",
+                "reason": str,
+                "adjusted_action": dict   (same as action, or modified)
+            }
+        """
+        action_type = action.get("type", "HOLD")
+        quantity = action.get("quantity", 0)
+        ticker = action.get("ticker", "")
+
+        # HOLD always approved
+        if action_type == "HOLD" or quantity == 0:
+            return {
+                "decision": "APPROVE",
+                "reason": "No trade to review (HOLD).",
+                "adjusted_action": action,
+            }
+
+        close = market_state.get("Close", 0)
+        volume = market_state.get("Volume", 1)
+        portfolio_value = agent_state.get("portfolio_value", 1)
+        current_positions = agent_state.get("positions", {})
+        held_qty = current_positions.get(ticker, 0)
+
+        reasons = []
+        decision = "APPROVE"
+        adjusted_action = dict(action)
+
+        # ---- Rule 1: Max position size ----
+        if action_type == "BUY":
+            new_qty = held_qty + quantity
+            position_value = new_qty * close
+            if portfolio_value > 0 and position_value / portfolio_value > self.MAX_POSITION_PCT:
+                max_allowed = int(
+                    (self.MAX_POSITION_PCT * portfolio_value - held_qty * close) / close
+                ) if close > 0 else 0
+                max_allowed = max(0, max_allowed)
+                reasons.append(
+                    f"Position size rule: {new_qty} shares "
+                    f"({position_value/portfolio_value*100:.1f}% of portfolio) "
+                    f"exceeds {self.MAX_POSITION_PCT*100:.0f}% limit. "
+                    f"Reduced to {max_allowed} shares."
+                )
+                adjusted_action["quantity"] = max_allowed
+                decision = "WARN"
+
+        # ---- Rule 2: Max order size vs volume ----
+        avg_volume = max(volume, 1)
+        if quantity > avg_volume * self.MAX_ORDER_VOLUME_PCT:
+            allowed_qty = int(avg_volume * self.MAX_ORDER_VOLUME_PCT)
+            allowed_qty = max(1, allowed_qty)
+            reasons.append(
+                f"Order size rule: {quantity} shares exceeds "
+                f"{self.MAX_ORDER_VOLUME_PCT*100:.0f}% of volume ({avg_volume:.0f}). "
+                f"Reduced to {allowed_qty}."
+            )
+            adjusted_action["quantity"] = min(
+                adjusted_action["quantity"], allowed_qty
+            )
+            decision = "WARN"
+
+        # ---- Rule 3: Manipulation / Burst detection ----
+        is_large = quantity > (avg_volume * 0.05)  # >5% of volume = "large"
+        if is_large:
+            if agent_name not in self._recent_orders:
+                self._recent_orders[agent_name] = []
+            self._recent_orders[agent_name].append(current_step)
+            # prune old entries
+            self._recent_orders[agent_name] = [
+                s for s in self._recent_orders[agent_name]
+                if current_step - s <= self.BURST_WINDOW
+            ]
+            if len(self._recent_orders[agent_name]) >= self.BURST_THRESHOLD:
+                reasons.append(
+                    f"Manipulation alert: {agent_name} placed "
+                    f"{len(self._recent_orders[agent_name])} large orders "
+                    f"in the last {self.BURST_WINDOW} steps. Trade BLOCKED."
+                )
+                decision = "BLOCK"
+                adjusted_action["type"] = "HOLD"
+                adjusted_action["quantity"] = 0
+
+        # Adversarial-specific flag
+        if "adversarial" in agent_name.lower() and is_large and decision != "BLOCK":
+            reasons.append(
+                f"Adversarial agent '{agent_name}' placing large order – flagged."
+            )
+            if decision == "APPROVE":
+                decision = "WARN"
+
+        reason_text = " | ".join(reasons) if reasons else "Trade compliant."
+        return {
+            "decision": decision,
+            "reason": reason_text,
+            "adjusted_action": adjusted_action,
+        }

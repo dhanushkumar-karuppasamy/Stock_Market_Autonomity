@@ -1,0 +1,83 @@
+"""
+Adversarial Agent – simulates pump-and-dump manipulation.
+"""
+
+import random
+from agents.base_agent import TradingAgent
+
+
+class AdversarialAgent(TradingAgent):
+    """
+    Strategy (pump-and-dump):
+    - In low-volume and low-volatility zones, accumulates a large position
+      (pump phase) by buying a burst of shares.
+    - Once position appreciates by a threshold %, dumps the entire position
+      (dump phase).
+    - Clearly labels each action as "pump phase" or "dump phase" in last_reason.
+    """
+
+    PUMP_FRACTION = 0.25       # 25 % of cash in one burst
+    DUMP_THRESHOLD = 0.03      # dump after 3 % gain
+    VOLUME_LOW_PCTILE = 0.30   # consider "low volume" if current vol < 30th pctile
+    PUMP_PROBABILITY = 0.20    # 20 % chance to attempt pump in qualifying bar
+
+    def __init__(self, name: str, initial_cash: float = 100_000.0):
+        super().__init__(name, initial_cash)
+        self._volume_history: list[float] = []
+        self._phase = "idle"  # "idle" | "pumping" | "ready_to_dump"
+
+    def observe_market_state(self, state: dict):
+        super().observe_market_state(state)
+        bar = state.get("current_bar", {})
+        vol = bar.get("Volume", 0)
+        self._volume_history.append(vol)
+
+    def _is_low_volume(self) -> bool:
+        """Check if current volume is in the lower quartile of history."""
+        if len(self._volume_history) < 5:
+            return False
+        current = self._volume_history[-1]
+        sorted_vols = sorted(self._volume_history)
+        idx = int(len(sorted_vols) * self.VOLUME_LOW_PCTILE)
+        threshold = sorted_vols[idx]
+        return current <= threshold
+
+    def decide(self) -> dict:
+        state = self._state
+        if state is None:
+            return {"type": "HOLD", "ticker": "", "quantity": 0}
+
+        bar = state["current_bar"]
+        ticker = bar.get("ticker", "")
+        close = bar["Close"]
+        held_qty = self.positions.get(ticker, 0)
+        avg = self.avg_cost.get(ticker, 0)
+
+        # ---------- Dump phase ----------
+        if held_qty > 0 and avg > 0:
+            gain_pct = (close - avg) / avg
+            if gain_pct >= self.DUMP_THRESHOLD:
+                self._phase = "dump"
+                self.last_reason = (
+                    f"DUMP phase: gain {gain_pct*100:.1f}% >= "
+                    f"{self.DUMP_THRESHOLD*100:.0f}% threshold, "
+                    f"dumping {held_qty} shares at {close:.2f}"
+                )
+                return {"type": "SELL", "ticker": ticker, "quantity": held_qty}
+
+        # ---------- Pump phase ----------
+        if self._is_low_volume() and random.random() < self.PUMP_PROBABILITY:
+            affordable = int(
+                (self.cash * self.PUMP_FRACTION) / close
+            ) if close > 0 else 0
+            if affordable > 0:
+                self._phase = "pump"
+                self.last_reason = (
+                    f"PUMP phase: low-volume zone detected, "
+                    f"burst-buying {affordable} shares at {close:.2f}"
+                )
+                return {"type": "BUY", "ticker": ticker, "quantity": affordable}
+
+        self._phase = "idle"
+        self.last_reason = "Adversarial agent idle – conditions not met"
+        return {"type": "HOLD", "ticker": ticker, "quantity": 0}
