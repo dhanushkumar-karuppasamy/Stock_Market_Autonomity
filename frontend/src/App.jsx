@@ -28,7 +28,7 @@ const DEFAULT_PARAMS = {
 };
 
 export default function App() {
-  const [theme, setTheme] = useState(() => localStorage.getItem('theme') || 'light');
+  const [theme, setTheme] = useState(() => localStorage.getItem('theme') || 'dark');
 
   useEffect(() => {
     localStorage.setItem('theme', theme);
