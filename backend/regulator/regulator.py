@@ -28,6 +28,9 @@ class RegulatorAgent:
            large orders (≥ 3 large orders in 5-step window) and blocks them.
         4. **AdversarialFlag** – large orders from adversarial agents are
            always flagged with a warning.
+        5. **CrashContrarianRisk** – flags risky buys during market crashes.
+        6. **RepeatOffender** – after accumulating ≥ 5 warnings, the agent
+           is blocked for a cooldown period (10 steps).  Resets after cooldown.
     """
 
     MAX_POSITION_PCT = 0.30        # max 30 % of portfolio value in one position
@@ -36,10 +39,16 @@ class RegulatorAgent:
     BURST_THRESHOLD = 3            # max large orders in window
     CRASH_DROP_PCT = -0.05         # >5 % drop from recent avg → crash condition
     CRASH_LOOKBACK = 10            # number of bars to average for crash baseline
+    WARN_ESCALATION_THRESHOLD = 5  # cumulative warnings before agent is blocked
+    WARN_COOLDOWN_STEPS = 10       # steps an agent stays blocked after escalation
 
     def __init__(self):
         # Track recent large orders per agent for burst detection
         self._recent_orders: dict[str, list[int]] = {}   # agent -> list of steps
+        # Track cumulative warnings per agent for repeat-offender escalation
+        self._warning_counts: dict[str, int] = {}        # agent -> total warnings
+        # Track when an agent was blocked due to escalation (step when block began)
+        self._escalation_blocked: dict[str, int] = {}    # agent -> step blocked at
 
     def review_trade(
         self,
@@ -92,6 +101,30 @@ class RegulatorAgent:
         reasons = []
         decision = "APPROVE"
         adjusted_action = dict(action)
+
+        # ---- Rule 0: Repeat-offender escalation check ----
+        # If the agent has been blocked due to too many warnings, check cooldown
+        if agent_name in self._escalation_blocked:
+            blocked_at = self._escalation_blocked[agent_name]
+            if current_step - blocked_at < self.WARN_COOLDOWN_STEPS:
+                steps_left = self.WARN_COOLDOWN_STEPS - (current_step - blocked_at)
+                return {
+                    "decision": "BLOCK",
+                    "reason": (
+                        f"Repeat offender: {agent_name} accumulated "
+                        f"{self._warning_counts.get(agent_name, 0)} warnings. "
+                        f"Blocked for {self.WARN_COOLDOWN_STEPS}-step cooldown "
+                        f"({steps_left} steps remaining)."
+                    ),
+                    "adjusted_action": {
+                        **action, "action": "HOLD", "quantity": 0,
+                    },
+                    "count_at_step": 1,
+                }
+            else:
+                # Cooldown expired — reset and allow trading again
+                del self._escalation_blocked[agent_name]
+                self._warning_counts[agent_name] = 0
 
         # ---- Rule 1: Max position size ----
         if action_type == "BUY":
@@ -167,6 +200,24 @@ class RegulatorAgent:
                     decision = "WARN"
 
         reason_text = " | ".join(reasons) if reasons else "Trade compliant."
+
+        # ---- Rule 6: Repeat-offender escalation ----
+        # Accumulate warnings and escalate to BLOCK after threshold
+        if decision == "WARN":
+            self._warning_counts[agent_name] = (
+                self._warning_counts.get(agent_name, 0) + 1
+            )
+            if self._warning_counts[agent_name] >= self.WARN_ESCALATION_THRESHOLD:
+                decision = "BLOCK"
+                adjusted_action["action"] = "HOLD"
+                adjusted_action["quantity"] = 0
+                self._escalation_blocked[agent_name] = current_step
+                reasons.append(
+                    f"Repeat offender escalation: {agent_name} hit "
+                    f"{self._warning_counts[agent_name]} cumulative warnings. "
+                    f"BLOCKED for {self.WARN_COOLDOWN_STEPS}-step cooldown."
+                )
+                reason_text = " | ".join(reasons)
 
         # Violation / warn count at this step
         count_at_step = len(reasons)

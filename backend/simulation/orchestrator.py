@@ -816,6 +816,15 @@ class OrchestratorAgent:
                 d["status"] = "ACTIVE"
             agents_data.append(d)
 
+        # ── Regulator agent summary ──────────────────────────────────
+        reg_log = self.logger.get_regulation_log()
+        reg_blocks = sum(1 for r in reg_log if r.get("decision") == "BLOCK")
+        reg_warns = sum(1 for r in reg_log if r.get("decision") == "WARN")
+        reg_approves = (
+            sum(1 for t in self.logger.get_trade_log()
+                if t.get("regulator_decision") == "APPROVE")
+        )
+
         return {
             # Orchestrator metadata – Head Agent info for DevHack PPT
             "head_agent": {
@@ -828,6 +837,24 @@ class OrchestratorAgent:
                 "trading_halted": self.trading_halted,
                 "circuit_breakers_active": self.circuit_breakers_active,
                 "run_id": self.run_id,
+            },
+            # Regulator agent metadata
+            "regulator_agent": {
+                "name": "RegulatorAgent",
+                "role": "Compliance Agent – reviews every trade for rule violations.",
+                "rules_enforced": [
+                    "MaxPositionLimit",
+                    "MaxOrderSize",
+                    "BurstTrading / ManipulationPattern",
+                    "AdversarialFlag",
+                    "CrashContrarianRisk",
+                    "RepeatOffender",
+                ],
+                "total_reviews": len(self.logger.get_trade_log()),
+                "approvals": reg_approves,
+                "warnings": reg_warns,
+                "blocks": reg_blocks,
+                "status": "ACTIVE" if not self.trading_halted else "HALTED",
             },
             # Simulation state
             "step": self.current_step,

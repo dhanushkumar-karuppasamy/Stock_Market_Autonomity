@@ -1,9 +1,9 @@
 ================================================================================
-  MULTI-AGENT STOCK MARKET AI AUTONOMITY — FULL PROJECT REPORT
+  MULTI-AGENT STOCK MARKET AI AUTONOMITY — FULL PROJECT REPORT (Phase 2)
 ================================================================================
   Project  : Multi-Agent Stock Market AI Autonomity
   Repo     : https://github.com/dhanushkumar-karuppasamy/Stock_Market_Autonomity
-  Purpose  : DevHack 2026 Phase-1 "Agentic AI" submission
+  Purpose  : DevHack 2026 Phase-2 "Agentic AI" submission
   Date     : February 2026
 ================================================================================
 
@@ -19,7 +19,7 @@ TABLE OF CONTENTS
       5.2   Simulation Facade (simulation/simulation.py)
       5.3   OrchestratorAgent — Head Agent (simulation/orchestrator.py)
       5.4   Market Engine (market/market.py)
-      5.5   Base Agent (agents/base_agent.py)
+      5.5   Base Agent — Agentic Pipeline (agents/base_agent.py)
       5.6   Conservative Agent (agents/conservative_agent.py)
       5.7   Momentum Agent (agents/momentum_agent.py)
       5.8   Mean-Reversion Agent (agents/mean_reversion_agent.py)
@@ -31,22 +31,29 @@ TABLE OF CONTENTS
   6.  Frontend — Detailed Breakdown
       6.1   Entry Point & App Shell
       6.2   API Client
-      6.3   ControlsPanel
-      6.4   PriceChart (Candlestick + Line)
-      6.5   AgentsPanel
-      6.6   PerformanceCharts
-      6.7   RiskOverviewPanel
-      6.8   TradeLogTable
-      6.9   RegulationLogTable
-      6.10  SettingsModal
-      6.11  CSS / Theming
+      6.3   TopBar
+      6.4   LeftSidebar (Tab Navigation)
+      6.5   RightTradePanel (Controls)
+      6.6   PriceChart (TradingView Lightweight Charts v5)
+      6.7   MarketPanel
+      6.8   AgentsPanel
+      6.9   StatsPanel
+      6.10  HelpPanel
+      6.11  RiskOverviewPanel
+      6.12  PerformanceCharts
+      6.13  TradeLogTable
+      6.14  RegulationLogTable
+      6.15  SettingsModal
+      6.16  CSS / Theming
   7.  All Features List
   8.  REST API Reference
   9.  Database Schema
   10. Agent Interaction Flow
-  11. DevHack 2026 Phase-1 Compliance
-  12. How to Run
-  13. Dependencies
+  11. Agentic AI Pipeline (Perceive → Reason → Act)
+  12. DevHack 2026 Phase-2 Compliance
+  13. Phase 2 Enhancements (What Changed from Phase 1)
+  14. How to Run
+  15. Dependencies
 
 
 ================================================================================
@@ -57,15 +64,18 @@ This project is a **Multi-Agent Stock Market AI Autonomy Simulator** — a
 full-stack application where multiple autonomous trading agents compete in a
 simulated stock market powered by real historical data (via yfinance).
 
-Each agent has a unique strategy, its own $100,000 cash allocation, and
-operates independently.  A central Orchestrator (Head Agent) coordinates the
-step-by-step simulation, while a Regulator agent enforces compliance rules.
-Every trade and regulation event is logged to both in-memory lists (for
-real-time UI) and a SQLite database (for persistent post-hoc analysis).
+Each agent has a unique strategy, its own ₹1,00,000 cash allocation, and
+operates independently using a structured **Perceive → Reason → Act** agentic
+pipeline.  A central Orchestrator (Head Agent) coordinates the step-by-step
+simulation, while a Regulator agent enforces compliance rules.  Every trade
+and regulation event is logged to both in-memory lists (for real-time UI) and
+a SQLite database (for persistent post-hoc analysis).
 
 The system is NOT a chatbot — it is an autonomous, goal-driven multi-agent
-decision-making system where agents observe market state, apply rule-based
-strategies, produce reasoned actions, and are subject to regulatory oversight.
+decision-making system where agents perceive market state, apply rule-based
+reasoning to produce structured decisions, act on those decisions, and are
+subject to regulatory oversight.  Every agent maintains a memory buffer of
+past observations and performance statistics.
 
 
 ================================================================================
@@ -73,9 +83,16 @@ strategies, produce reasoned actions, and are subject to regulatory oversight.
 ================================================================================
 
     ┌─────────────────────────────────────────────────────────────────┐
-    │                      React Frontend (Vite)                      │
-    │   PriceChart · AgentsPanel · RiskOverview · TradeLog · Controls │
-    └─────────────────────────┬───────────────────────────────────────┘
+    │                  React Frontend (Vite + TradingView v5)         │
+    │                                                                  │
+    │  TopBar · LeftSidebar · PriceChart · MarketPanel · AgentsPanel  │
+    │  StatsPanel · HelpPanel · RightTradePanel · RiskOverview        │
+    │  TradeLogTable · RegulationLogTable · PerformanceCharts         │
+    │                                                                  │
+    │  3-Column Layout: 72px sidebar | 1fr center | 310px controls    │
+    │  5-Tab Navigation: Trades · Market · Agents · Stats · Help      │
+    │  Themes: Dark (neon terminal) + Light                            │
+    └─────────────────────────────┬───────────────────────────────────┘
                               │  REST API (axios)
                               ▼
     ┌─────────────────────────────────────────────────────────────────┐
@@ -101,6 +118,12 @@ strategies, produce reasoned actions, and are subject to regulatory oversight.
     │   │ Engine   │  │ (5 types)│  │  (Compliance) │                  │
     │   └──────────┘  └──────────┘  └──────────────┘                  │
     │                                                                  │
+    │   Agent Pipeline per step:                                       │
+    │   ┌──────────┐ → ┌──────────┐ → ┌──────────┐ → ┌────────────┐  │
+    │   │ Perceive │   │  Reason  │   │   Act    │   │  Regulate  │  │
+    │   │(features)│   │(decision)│   │(execute) │   │(compliance)│  │
+    │   └──────────┘   └──────────┘   └──────────┘   └────────────┘  │
+    │                                                                  │
     │   ┌──────────────────┐  ┌──────────────────────┐                │
     │   │  SimulationLogger │  │    SQLite Database   │                │
     │   │  (in-memory)      │  │    (devhack.db)      │                │
@@ -124,8 +147,14 @@ strategies, produce reasoned actions, and are subject to regulatory oversight.
   Frontend:
     • React 18.3             (UI framework)
     • Vite 5.4               (build tool / dev server)
-    • Recharts 2.12          (charting library)
+    • TradingView Lightweight Charts 5.1  (professional candlestick charting)
+    • Recharts 2.12          (portfolio performance + violation bar charts)
     • Axios 1.7              (HTTP client)
+
+  Fonts:
+    • Space Grotesk          (headings)
+    • Inter                  (body text)
+    • JetBrains Mono         (data / monospace)
 
   Database:
     • SQLite (devhack.db)    — 3 tables: runs, trades, regulation_events
@@ -135,9 +164,10 @@ strategies, produce reasoned actions, and are subject to regulatory oversight.
 4. DIRECTORY STRUCTURE
 ================================================================================
 
-  Stock_market_Agent/
+  Stock_Market_Autonomity/
   ├── README.md
   ├── PROJECT_REPORT.txt              ← this file
+  ├── VIDEO_SCRIPT.md                 ← Phase 2 demo video script
   │
   ├── backend/
   │   ├── app.py                      ← Flask API entry point
@@ -152,7 +182,7 @@ strategies, produce reasoned actions, and are subject to regulatory oversight.
   │   │
   │   ├── agents/
   │   │   ├── __init__.py
-  │   │   ├── base_agent.py           ← TradingAgent abstract base class
+  │   │   ├── base_agent.py           ← TradingAgent base (Perceive→Reason→Act pipeline)
   │   │   ├── conservative_agent.py   ← ConservativeAgent
   │   │   ├── momentum_agent.py       ← MomentumAgent
   │   │   ├── mean_reversion_agent.py ← MeanReversionAgent
@@ -178,15 +208,20 @@ strategies, produce reasoned actions, and are subject to regulatory oversight.
       └── src/
           ├── main.jsx                ← React entry point
           ├── App.jsx                 ← Root component (state, handlers, layout)
-          ├── index.css               ← Full dark-theme stylesheet (585 lines)
+          ├── index.css               ← Neon dark/light theme (1066 lines)
           ├── api/
           │   └── client.js           ← Axios API client
           └── components/
-              ├── ControlsPanel.jsx   ← Sidebar: ticker, speed, agents, buttons
-              ├── PriceChart.jsx      ← Candlestick/line chart + trade markers
-              ├── AgentsPanel.jsx     ← Agent cards with risk metrics
-              ├── PerformanceCharts.jsx ← Portfolio + violation bar charts
+              ├── TopBar.jsx          ← Sticky header (ticker, portfolio, theme toggle)
+              ├── LeftSidebar.jsx     ← 72px icon sidebar (5 tabs navigation)
+              ├── RightTradePanel.jsx ← 310px controls panel (buttons, sliders, agents)
+              ├── PriceChart.jsx      ← TradingView v5 chart + scrubber
+              ├── MarketPanel.jsx     ← Market overview (OHLC, indicators, volatility)
+              ├── AgentsPanel.jsx     ← Rich agent cards (pipeline, history, metrics)
+              ├── StatsPanel.jsx      ← Statistics dashboard (leaderboard, risk)
+              ├── HelpPanel.jsx       ← In-app documentation (agents, pipeline, tech)
               ├── RiskOverviewPanel.jsx ← System-wide risk dashboard
+              ├── PerformanceCharts.jsx ← Portfolio + violation charts (Recharts)
               ├── TradeLogTable.jsx   ← Filterable trade log table
               ├── RegulationLogTable.jsx ← Regulation event log table
               └── SettingsModal.jsx   ← Per-agent parameter tuning modal
@@ -265,30 +300,36 @@ Class: OrchestratorAgent
     price_history       – list of all price bars seen so far
     trades_at_step      – trades executed in the latest step
     _peak_total_value   – for global drawdown tracking
+    _active_agent_keys  – stored agent keys for reinit during jump (Phase 2)
+    _agent_params       – stored agent params for reinit during jump (Phase 2)
 
   Methods:
 
     init(ticker, period, interval, active_agents, agent_params) → dict
       1. Downloads market data via yfinance
-      2. Creates 5 trading agents (each with $100,000)
+      2. Creates 5 trading agents (each with ₹1,00,000)
       3. Creates RegulatorAgent
       4. Generates UUID run_id, registers run in SQLite
       5. Attaches DB to logger for dual-write
-      6. Resets all crash / halt state
-      7. Returns initial snapshot
+      6. Stores _active_agent_keys and _agent_params for jump/reinit
+      7. Resets all crash / halt state
+      8. Returns initial snapshot
 
     run_step() → dict
       Core step logic (8-step flow):
         Guard:  If trading_halted → force all agents to HOLD, advance bar,
                 return snapshot with "HALTED_BY_CIRCUIT_BREAKER" status
         Step 1: Get current market state (price, indicators)
-        Step 2: Ask each active agent for an action (BUY/SELL/HOLD)
-                • On the crash-trigger step, the whale’s decide() is
-                  overridden with the forced full-dump SELL action
+        Step 2: For each active agent: call agent.step(state) which runs
+                the Perceive → Reason → Act agentic pipeline internally.
+                • On the crash-trigger step, the whale's pipeline is
+                  overridden: perceive() runs, then act() is called directly
+                  with the forced full-dump SELL action (bypassing reason())
         Step 3: Send each action to Regulator for compliance review
         Step 4: Apply APPROVED/WARN actions to agent portfolios
         Step 5: Log trades + regulation events (memory + SQLite)
-        Step 6: Compute rewards and call agent adaptation hooks
+        Step 6: Compute rewards and call agent.update_after_step() which
+                updates performance_stats and memory
         Step 7: Check per-agent circuit breakers (>10 % drawdown → halt)
                 + global circuit breaker (>−15 % system drawdown → halt all)
         Step 8: Advance market to next bar (endogenous price impact)
@@ -300,7 +341,7 @@ Class: OrchestratorAgent
       True if agent is an AdversarialAgent
 
     _build_whale_dump(whale) → dict
-      Builds forced SELL action for 100 % of whale’s holdings
+      Builds forced SELL action for 100 % of whale's holdings
 
     trigger_crash() → dict
       Public entry point – delegates to trigger_market_crash()
@@ -311,7 +352,7 @@ Class: OrchestratorAgent
         2. Drops OHLC prices by 15-20 % from current step onward
         3. Recomputes all technical indicators
         4. Records pre-crash price, activates crash_mode_active
-        5. Runs one step where whale’s action is overridden to full dump
+        5. Runs one step where whale's action is overridden to full dump
         6. Large negative net_volume flows through endogenous price model
         Result: subsequent ticks show momentum agents stop-lossing,
         and eventually the global circuit breaker fires.
@@ -322,8 +363,18 @@ Class: OrchestratorAgent
     batch_step(n=10) → dict
       Runs up to n steps (max 200), returns final snapshot
 
-    jump_to_step(target_step) → dict
-      Rewinds (re-init + replay) or fast-forwards to target step
+    _reinit_without_download() → None                         ★ Phase 2 NEW
+      Resets the entire simulation to step 0 WITHOUT re-downloading
+      market data from yfinance.  Uses market.reset() to rewind the
+      market environment, re-creates all 5 agents from stored config,
+      creates a new DB run, and resets all crash/halt state.  Used by
+      jump_to_step() for fast rewind.
+
+    jump_to_step(target_step) → dict                          ★ Phase 2 CHANGED
+      Rewinds (via _reinit_without_download + replay) or fast-forwards
+      to target step.  During replay, DB writes are temporarily disabled
+      (logger._db set to None) to prevent SQLite transaction errors.
+      Restores DB connection in a try/finally block after replay.
 
     get_system_risk() → dict
       Returns: total_exposure, total_aum, exposure_pct,
@@ -339,7 +390,8 @@ Class: OrchestratorAgent
         - current_bar, price_history
         - agents: [{name, cash, positions, portfolio_value, last_action,
                     last_reasoning, last_reason, goal, halted, active,
-                    status, return_pct, max_drawdown_pct, sharpe_ratio}, ...]
+                    status, return_pct, max_drawdown_pct, sharpe_ratio,
+                    memory_size, latest_memory, performance_stats}, ...]
         - trade_log, regulation_log, trades_at_step
         - system_risk, crash_active, crash_mode_active
         - trading_halted, trading_status ("ACTIVE" / "HALTED_BY_CIRCUIT_BREAKER")
@@ -358,7 +410,11 @@ Function: download_market_data(ticker, period, interval) → pd.DataFrame
   - Raises ValueError if no data available
 
 Class: MarketEnvironment
-  __init__(ticker, period, interval)
+
+  Constants:
+    DEFAULT_SENSITIVITY = 1e-5    ← how strongly net volume impacts price
+
+  __init__(ticker, period, interval, sensitivity_factor=DEFAULT_SENSITIVITY)
     - Downloads data
     - Pre-computes technical indicators:
         SMA20     – 20-period simple moving average
@@ -367,6 +423,8 @@ Class: MarketEnvironment
         BB_UP     – Upper Bollinger Band (SMA20 + 2σ)
         BB_LOW    – Lower Bollinger Band (SMA20 − 2σ)
         Volatility – 20-period rolling std of log returns
+    - Initializes current_price (simulated price) from first close
+    - Initializes price_history_simulated list
 
   get_state() → dict
     Returns: {current_bar, recent_window (last 50 bars), step, total_bars,
@@ -374,18 +432,33 @@ Class: MarketEnvironment
 
   step(net_volume) → dict
     Advances market by 1 bar with endogenous price impact.
-    Net agent order flow adjusts simulated price.
+    Net agent order flow adjusts simulated price via sensitivity_factor.
     Returns dict with "finished" key.
+
+  reset() → None                                              ★ Phase 2 NEW
+    Resets current_step to 0, re-initializes current_price and
+    price_history_simulated from first historical close.  No network
+    call — reuses previously downloaded data.  Used by orchestrator's
+    _reinit_without_download() for fast rewind during jump.
 
   is_done() → bool
     True when at last bar.
 
+  _bar_to_dict(idx) → dict                                   ★ Phase 2 NEW
+    Converts a DataFrame row to a dict with OHLCV + indicators +
+    SimulatedPrice.
+
+  _build_step_state(idx) → dict                              ★ Phase 2 NEW
+    Builds compact state dict with both historical and simulated
+    prices + all technical indicators.
+
 
 ────────────────────────────────────────────────────────────────────────────────
-5.5  Base Agent (agents/base_agent.py)
+5.5  Base Agent — Agentic Pipeline (agents/base_agent.py)
 ────────────────────────────────────────────────────────────────────────────────
 
-Abstract base class for all 5 trading agents.
+Abstract base class for all 5 trading agents.  Implements the
+**Perceive → Reason → Act** agentic pipeline.
 
 Class: TradingAgent
 
@@ -397,41 +470,62 @@ Class: TradingAgent
     last_reason (str)       – backward-compat alias for last_reasoning
     goal (str)              – strategic objective (set by subclasses)
     _state, halted, active, _peak_value
+    memory (list[dict])     – full perceive→reason→act history per step
+    performance_stats (dict) – {pnl, wins, losses, max_drawdown}
 
-  Methods:
-    __init__(name, initial_cash=100_000)
-    observe_market_state(state)       – store market state for decide()
+  Agentic Pipeline Methods:
 
-    decide() → dict                   – returns structured decision:
-                                        {"action": "BUY"|"SELL"|"HOLD",
-                                         "quantity": int,
-                                         "reasoning": str}
-                                        Default impl returns HOLD with
-                                        "Base agent does not implement
-                                         a strategy." reasoning.
-                                        Sets self.last_action and
-                                        self.last_reasoning after each call.
+    perceive(market_state) → dict                             ★ Agentic Pipeline
+      Extracts relevant features from raw market state.
+      Default impl returns market_state as-is.
+      Subclasses override to extract agent-specific features
+      (e.g. SMA values for Momentum, Bollinger Bands for MeanReversion).
 
-    build_reasoning(**kwargs) → str    – utility to build concise reasoning
-                                        strings from key indicators, e.g.
-                                        build_reasoning(RSI=25,
-                                          price_vs_BB="below BB_LOW")
-                                        → "RSI=25, price_vs_BB=below BB_LOW"
+    reason(observation) → dict                                ★ Agentic Pipeline
+      Rule-based decision from the observation.
+      Returns: {"action": "BUY"|"SELL"|"HOLD",
+                "quantity": int,
+                "reasoning": str}
+      Subclasses override with strategy-specific logic.
 
-    update_after_step(reward, state)  – adaptation hook (no-op default)
-    get_portfolio_value(price, ticker) – cash + holdings value
+    act(decision) → dict                                      ★ Agentic Pipeline
+      Converts internal decision to action dict.
+      Sets self.last_action and self.last_reasoning.
+      Returns: {"action": ..., "quantity": ..., "reasoning": ...}
 
-    execute_action(action, price)     – apply BUY/SELL to cash/positions;
-                                        supports both "action" and legacy
-                                        "type" keys; updates last_action,
-                                        last_reasoning, last_reason
+    step(market_state) → dict                                 ★ Composite Method
+      Runs the full pipeline: perceive → reason → act.
+      Appends the full {observation, decision, action} record to memory.
+      This is what the Orchestrator calls each simulation step.
 
-    get_risk_metrics(price, ticker)   – return_pct, max_drawdown_pct,
-                                        sharpe_ratio, current_drawdown_pct
+  Other Methods:
 
-    to_dict(price, ticker)            – serialize for frontend; includes
-                                        last_action, last_reasoning,
-                                        last_reason, goal, status
+    explain_last_action() → str
+      Returns self.last_reasoning.
+
+    build_reasoning(**kwargs) → str
+      Utility to build concise reasoning strings from key indicators.
+
+    update_after_step(reward, state) → None
+      Adaptation hook — now tracks performance_stats:
+      updates pnl, wins/losses count, max_drawdown, and
+      stamps the last memory entry with the result.
+
+    get_portfolio_value(price, ticker) → float
+      Cash + holdings value at given price.
+
+    execute_action(action, price) → None
+      Apply BUY/SELL to cash/positions.  Supports both "action" and
+      legacy "type" keys.  Updates last_action, last_reasoning, last_reason.
+
+    get_risk_metrics(price, ticker) → dict
+      return_pct, max_drawdown_pct, sharpe_ratio, current_drawdown_pct
+
+    to_dict(price, ticker) → dict
+      Serialize for frontend.  Includes: name, cash, positions,
+      portfolio_value, last_action, last_reasoning, last_reason,
+      goal, status, halted, active, return_pct, max_drawdown_pct,
+      sharpe_ratio, memory_size, latest_memory, performance_stats.
 
 
 ────────────────────────────────────────────────────────────────────────────────
@@ -442,18 +536,23 @@ Class: ConservativeAgent(TradingAgent)
 
   Goal: Preserve capital with small, steady returns in calm markets.
 
-  Configurable Parameters:
+  Configurable Parameters (via params dict):
     VOLATILITY_THRESHOLD   – max volatility to trade (default 0.02)
     POSITION_FRACTION      – % of cash per trade (default 7%)
     STOP_LOSS_PCT          – stop-loss threshold (default 3%)
 
-  Decision Logic:
-    1. Stop-loss: if holding & price < avg_cost × (1 − 3%) → SELL all
-    2. Volatility filter: if vol > 0.02 → HOLD
-    3. Entry: if price < SMA50 AND SMA20 > SMA50 AND no position → BUY small
-    4. Default: HOLD
+  Agentic Pipeline:
+    perceive(market_state):
+      Extracts: ticker, close, sma20, sma50, volatility, held_qty, avg_cost
 
-  Produces detailed last_reason for every decision.
+    reason(observation):
+      Decision Logic:
+        1. Stop-loss: if holding & price < avg_cost × (1 − 3%) → SELL all
+        2. Volatility filter: if vol > 0.02 → HOLD
+        3. Entry: if price < SMA50 AND SMA20 > SMA50 AND no position → BUY small
+        4. Default: HOLD
+
+  Produces detailed reasoning for every decision.
 
 
 ────────────────────────────────────────────────────────────────────────────────
@@ -464,13 +563,18 @@ Class: MomentumAgent(TradingAgent)
 
   Goal: Maximise profit by riding established price trends.
 
-  Configurable Parameters:
+  Configurable Parameters (via params dict):
     POSITION_FRACTION – % of cash per trade (default 15%)
 
-  Decision Logic:
-    1. Golden cross: SMA20 > SMA50 & no position → BUY
-    2. Death cross:  SMA20 < SMA50 & holding → SELL all
-    3. Default: HOLD (riding trend or no signal)
+  Agentic Pipeline:
+    perceive(market_state):
+      Extracts: ticker, close, sma20, sma50, held_qty
+
+    reason(observation):
+      Decision Logic:
+        1. Golden cross: SMA20 > SMA50 & no position → BUY
+        2. Death cross:  SMA20 < SMA50 & holding → SELL all
+        3. Default: HOLD (riding trend or no signal)
 
 
 ────────────────────────────────────────────────────────────────────────────────
@@ -481,14 +585,20 @@ Class: MeanReversionAgent(TradingAgent)
 
   Goal: Profit from price reversion to the moving average after extremes.
 
-  Configurable Parameters:
+  Configurable Parameters (via params dict):
     POSITION_FRACTION – % of cash per trade (default 12%)
     BAND_MULTIPLIER   – Bollinger Band width multiplier (default 2.0)
 
-  Decision Logic:
-    1. Oversold: price < BB_LOW → BUY
-    2. Overbought: price > BB_UP & holding → SELL all
-    3. Default: HOLD (within normal bands)
+  Agentic Pipeline:
+    perceive(market_state):
+      Extracts: ticker, close, bb_mid; recomputes bb_up/bb_low with
+      configurable BAND_MULTIPLIER
+
+    reason(observation):
+      Decision Logic:
+        1. Oversold: price < BB_LOW → BUY
+        2. Overbought: price > BB_UP & holding → SELL all
+        3. Default: HOLD (within normal bands)
 
 
 ────────────────────────────────────────────────────────────────────────────────
@@ -499,14 +609,20 @@ Class: NoiseTrader(TradingAgent)
 
   Goal: Inject realistic irrational / retail-style trading activity.
 
-  Configurable Parameters:
+  Configurable Parameters (via params dict):
     TRADE_PROBABILITY – chance to trade each step (default 15%)
     POSITION_FRACTION – % of cash per trade (default 2%)
 
-  Decision Logic:
-    1. Each step: 15% chance to trade, 85% HOLD
-    2. If trading: 50/50 BUY random qty or SELL random portion of holdings
-    3. Very small position sizes to simulate noise
+  Agentic Pipeline:
+    perceive(market_state):
+      Extracts: ticker, close, held_qty; generates trade_roll and
+      direction_roll random values
+
+    reason(observation):
+      Decision Logic:
+        1. Each step: 15% chance to trade, 85% HOLD
+        2. If trading: 50/50 BUY random qty or SELL random portion of holdings
+        3. Very small position sizes to simulate noise
 
 
 ────────────────────────────────────────────────────────────────────────────────
@@ -517,7 +633,7 @@ Class: AdversarialAgent(TradingAgent)
 
   Goal: Simulate pump-and-dump manipulation to stress-test the Regulator.
 
-  Configurable Parameters:
+  Configurable Parameters (via params dict):
     PUMP_FRACTION      – % of cash for pump trades (default 25%)
     DUMP_THRESHOLD     – gain % to trigger dump (default 3%)
     VOLUME_LOW_PCTILE  – volume percentile for low-vol detection (default 30%)
@@ -527,12 +643,18 @@ Class: AdversarialAgent(TradingAgent)
     _volume_history – tracks volume for percentile analysis
     _phase          – "idle" / "pump" / "dump"
 
-  Decision Logic:
-    1. Dump phase: if holding & unrealised gain ≥ 3% → SELL all
-    2. Pump phase: if current volume in bottom 30% & random trigger → BUY large
-    3. Default: HOLD (idle)
+  Agentic Pipeline:
+    perceive(market_state):
+      Extracts: ticker, close, volume, held_qty, avg_cost;
+      appends volume to _volume_history for percentile analysis
 
-  Labels all trades as "PUMP phase" or "DUMP phase" in last_reason.
+    reason(observation):
+      Decision Logic:
+        1. Dump phase: if holding & unrealised gain ≥ 3% → SELL all
+        2. Pump phase: if current volume in bottom 30% & random trigger → BUY large
+        3. Default: HOLD (idle)
+
+  Labels all trades as "PUMP phase" or "DUMP phase" in reasoning.
 
 
 ────────────────────────────────────────────────────────────────────────────────
@@ -550,9 +672,14 @@ Class: RegulatorAgent
     BURST_THRESHOLD        = 3      (max large orders before BLOCK)
     CRASH_DROP_PCT         = −0.05  (>5% price drop = crash condition)
     CRASH_LOOKBACK         = 10     (bars averaged for crash baseline)
+    WARN_ESCALATION_THRESHOLD = 5   (cumulative warnings before BLOCK)  ★ Phase 2
+    WARN_COOLDOWN_STEPS    = 10     (steps agent stays blocked after    ★ Phase 2
+                                     escalation; resets after cooldown)
 
   Internal State:
-    _recent_orders – per-agent list of steps with large orders
+    _recent_orders      – per-agent list of steps with large orders
+    _warning_counts     – per-agent cumulative warning counter          ★ Phase 2
+    _escalation_blocked – per-agent step when escalation block began    ★ Phase 2
 
   Method: review_trade(agent_name, action, agent_state, market_state, step)
     Accepts both new ("action"/"reasoning") and legacy ("type") key names.
@@ -566,9 +693,15 @@ Class: RegulatorAgent
       5. ContrarianCrashDetection – agent tries to BUY while market is
          crashing (simulated price >5% below recent average) → WARN
          with message: "Market is down −X.X%, agent chose BUY.
-         Risky contrarian behaviour: {agent’s reasoning}"
+         Risky contrarian behaviour: {agent's reasoning}"
+      6. RepeatOffender     – agent accumulates ≥5 cumulative warnings  ★ Phase 2
+         → BLOCK + 10-step cooldown.  During cooldown all trades from
+         that agent are immediately BLOCKED.  Warning count resets
+         after cooldown expires.
 
     HOLD actions always get APPROVE.
+    Rule 0 (escalation check) runs first — if an agent is in cooldown,
+    the trade is immediately BLOCKED without evaluating other rules.
 
   Helper: _compute_crash_drop(market_state) → float
     Computes percentage drop between current simulated price and the
@@ -599,6 +732,9 @@ Class: SimulationLogger
                          explanation)
     get_trade_log() → list[dict]                  – return trades list copy
     get_regulation_log() → list[dict]             – return regulation list copy
+
+  Note: During jump_to_step replay, the orchestrator temporarily sets
+  logger._db = None to prevent SQLite writes, restoring it afterwards.
 
 
 ────────────────────────────────────────────────────────────────────────────────
@@ -649,7 +785,13 @@ Class: SimulationDB
   Methods:
     create_run(run_id, ticker, period, interval)
     insert_trade(run_id, step, ticker, agent, action, price, qty, pv, decision, reason)
+      Uses _safe_commit() for resilient transaction handling.
     insert_regulation_event(run_id, step, agent, rule, decision, explanation)
+      Uses _safe_commit() for resilient transaction handling.
+    _safe_commit()                                            ★ Phase 2 NEW
+      Commits only if conn.in_transaction is True. Prevents
+      "cannot commit - no transaction is active" errors during
+      rapid sequential inserts (esp. during jump replay).
     close()
 
   All write operations are wrapped in try/except to prevent DB errors from
@@ -693,23 +835,37 @@ Class: SimulationDB
       status                            – 'idle' / 'paused' / 'running' / 'finished'
       crashFlash                        – red flash animation trigger
       highlightStep                     – step highlighted on chart
+      theme                             – 'dark' / 'light' (persisted to localStorage)
+      activeTab                         – 'trades' / 'market' / 'agents' / 'stats' / 'help'
+      maxReachedStep                    – highest step reached (caps scrubber)
+      jumpingRef (useRef)               – prevents concurrent jump API calls
+
+    Derived Values:
+      totalBalance                      – sum of all agents' portfolio_value
 
     Event Handlers:
-      handleInit()      – call /api/init with params
-      handleStep()      – call /api/step?n=batchSize
-      handleAutoRun()   – start setInterval loop
+      handleInit()      – call /api/init; resets maxReachedStep to 0
+      handleStep()      – call /api/step?n=batchSize; updates maxReachedStep
+      handleAutoRun()   – start setInterval loop; updates maxReachedStep
       handlePause()     – clear interval
-      handleJump(step)  – call /api/jump
+      handleJump(step)  – call /api/jump; blocks if step > maxReachedStep;
+                          uses jumpingRef lock to prevent concurrent jumps
       handleCrash()     – call /api/trigger-crash + 1.2s red flash
       toggleAgent(key)  – enable/disable agent
+      setTheme()        – toggle dark/light, persist to localStorage
 
-    Layout:
-      Header bar with title + status badge
+    Layout (3-column):
+      TopBar (sticky, full width)
       Error banner (conditional)
-      2-column grid:
-        Left:  ControlsPanel
-        Right: PriceChart, RiskOverviewPanel, AgentsPanel,
-               PerformanceCharts, TradeLogTable, RegulationLogTable
+      olymp-layout grid:
+        Column 1 (72px): LeftSidebar (tab navigation)
+        Column 2 (1fr):  Content area (switches by activeTab):
+          • trades → PriceChart + TradeLogTable + RegulationLogTable
+          • market → PriceChart + MarketPanel
+          • agents → AgentsPanel
+          • stats  → RiskOverviewPanel + StatsPanel + PerformanceCharts
+          • help   → HelpPanel
+        Column 3 (310px): RightTradePanel (controls)
       SettingsModal (conditional overlay)
 
 
@@ -718,7 +874,7 @@ Class: SimulationDB
 ────────────────────────────────────────────────────────────────────────────────
 
   Base URL: http://localhost:5000
-  Timeout: 60 seconds
+  Timeout: 60 seconds (120 seconds for jump endpoint)
 
   Functions:
     initSimulation(ticker, period, interval, activeAgents?, agentParams?)
@@ -731,7 +887,7 @@ Class: SimulationDB
       → POST /api/auto-step  body: {steps}
 
     jumpToStep(step)
-      → POST /api/jump  body: {step}
+      → POST /api/jump  body: {step}  timeout: 120s
 
     triggerCrash()
       → POST /api/trigger-crash
@@ -741,102 +897,224 @@ Class: SimulationDB
 
 
 ────────────────────────────────────────────────────────────────────────────────
-6.3  ControlsPanel (components/ControlsPanel.jsx)
+6.3  TopBar (components/TopBar.jsx)
 ────────────────────────────────────────────────────────────────────────────────
 
-  Sidebar panel with all simulation controls.
-
-  Ticker Selector:
-    AAPL, MSFT, TSLA, NSEI, RELIANCE.NS, TCS.NS, INFY.NS
-
-  Period Selector:   1d, 5d, 1mo, 3mo
-  Interval Selector: 1m, 5m, 15m, 1h, 1d
-
-  Speed Slider:      50ms – 1000ms (auto-run interval)
-  Batch Size Slider:  1 – 20 (steps per tick)
-
-  Agent Toggles:     Checkboxes for each of 5 agents
-
-  Action Buttons:
-    • Start / Re-init  (blue)
-    • Step              (green)
-    • Auto-Run          (green, when paused/idle)
-    • Pause             (yellow, when running)
-    • Trigger Crash     (red gradient + pulse animation)
-    • Agent Settings    (gray, opens modal)
-
-  Status Badge:  idle / running / paused / finished
-  Step Counter:  "Step X / Y"
-
-
-────────────────────────────────────────────────────────────────────────────────
-6.4  PriceChart (components/PriceChart.jsx)
-────────────────────────────────────────────────────────────────────────────────
-
-  Main chart showing price data with technical overlays.
+  Sticky header bar (56px height) with glassmorphism backdrop blur.
 
   Features:
-    • Toggle between Line chart and Candlestick chart
-    • Shows last 200 bars
-    • Close price line (blue)
-    • SMA20 line (orange)
-    • SMA50 line (purple)
-    • Bollinger Band upper/lower (dashed gray)
-    • Trade markers overlay:
-        ▲ green triangles for BUY trades
-        ▼ red triangles for SELL trades
-    • Highlight reference line for selected step
-    • Step scrubber slider at bottom (jump to any step)
+    • Logo "◈ MASTER" with gradient text
+    • Stock ticker dropdown (AAPL, MSFT, TSLA, NSEI, RELIANCE.NS, TCS.NS, INFY.NS)
+    • Period dropdown selector
+    • Center title: "Multi Agent Stock Market Environment For Research V1"
+    • Portfolio balance display in ₹ with gradient green text
+    • Crash indicator badge (animated pulse)
+    • Theme toggle button (🌙/☀️) — dark/light cycle
+    • Profile button (👤)
 
-  Internal Components:
-    CandlestickShape – custom SVG rect (green body for up, red for down)
-    TradeMarker      – SVG text marker (▲ BUY / ▼ SELL)
+  Fonts: JetBrains Mono for data, Space Grotesk for headings
 
 
 ────────────────────────────────────────────────────────────────────────────────
-6.5  AgentsPanel (components/AgentsPanel.jsx)
+6.4  LeftSidebar (components/LeftSidebar.jsx)
 ────────────────────────────────────────────────────────────────────────────────
 
-  Grid of agent status cards.
+  72px-wide icon sidebar for tab navigation.  Sticky positioned below TopBar.
 
-  Each card displays:
-    • Agent name
-    • Status badges (HALTED in red, INACTIVE in gray)
-    • Cash balance
-    • Current positions (ticker: qty)
-    • Total portfolio value
-    • Last action taken
-    • Risk metrics:
-        - Return % (color-coded)
-        - Current Drawdown % (color-coded)
-        - Max Drawdown %
-        - Sharpe Ratio
-    • Last reasoning (italic text)
+  Tab Items:
+    ⇅  Trades     – chart + trade log + regulation log
+    ◎  Market     – chart + market overview
+    ⬡  Agents     – agent cards with AI pipeline
+    ◈  Stats      – risk overview + statistics + performance charts
+    ?  Help       – in-app documentation
 
-  Visual states:
-    • Halted agents: red left border
+  Visual:
+    • Active tab: cyan highlight + left accent bar (3px-wide absolute)
+    • Footer: green pulsing "Live" indicator dot
+
+  Props: activeTab, onTabChange
+
+
+────────────────────────────────────────────────────────────────────────────────
+6.5  RightTradePanel (components/RightTradePanel.jsx)
+────────────────────────────────────────────────────────────────────────────────
+
+  310px-wide right-side controls panel.
+
+  Sections:
+    Candle Interval Selector: 1m, 5m, 15m, 1h, 1d
+    Speed Slider: 50ms – 1000ms (auto-run interval) with cyan accent
+    Batch Size Slider: 1 – 20 (steps per tick)
+    Agent Toggle Checkboxes: enable/disable each of 5 agents
+    Action Buttons (2×2 grid):
+      • ▶ Initialize  (blue)
+      • ⏩ Step        (cyan)
+      • ▶ Run         (green)
+      • ⏸ Pause       (amber)
+    Crash Trigger Button: animated pulse when crash is active
+    Agent Settings Button: opens SettingsModal
+    Status Info Panel: STATUS badge + "Step X / Y" counter
+
+
+────────────────────────────────────────────────────────────────────────────────
+6.6  PriceChart (components/PriceChart.jsx — TradingView Lightweight Charts v5)
+────────────────────────────────────────────────────────────────────────────────
+
+  Professional-grade candlestick chart powered by TradingView Lightweight
+  Charts v5 (NOT Recharts).
+
+  Chart Features:
+    • Toggle between Candlestick and Line chart modes
+    • OHLC candlesticks (green up / red down)
+    • Close price line (cyan #00d4ff)
+    • SMA20 overlay line (orange #ffb800)
+    • SMA50 overlay line (purple #a855f7)
+    • Bollinger Band upper line (gray dashed)
+    • Bollinger Band lower line (gray dashed)
+    • Bollinger Band mid line (gray dotted)
+    • Trade markers via createSeriesMarkers API:
+        ▲ arrowUp (green) for BUY trades
+        ▼ arrowDown (red) for SELL trades
+    • Full crosshair with dashed cyan lines and custom label background
+    • Floating legend overlay — live OHLC + indicator values on crosshair hover
+    • ResizeObserver for responsive chart sizing
+    • Transparent background (inherits dark card)
+
+  Neon Color Palette:
+    Up candles:   #00ff88 (green)
+    Down candles:  #ff3b5c (red)
+    Line/crosshair: #00d4ff (cyan)
+    SMA50:        #ffb800 (amber)
+    BB lines:     #a855f7 (purple)
+
+  Additional UI:
+    • Latest trade notification bar below chart: agent, action, qty, price (₹)
+    • Step scrubber slider at bottom:
+        - Debounced: uses local scrubValue state during drag
+        - Fires onJump only on onMouseUp / onTouchEnd (not onChange)
+        - Max limited to maxReachedStep prop
+        - Prevents jumping beyond computed steps
+
+  Props: snapshot, onJump, maxReachedStep
+
+
+────────────────────────────────────────────────────────────────────────────────
+6.7  MarketPanel (components/MarketPanel.jsx)
+────────────────────────────────────────────────────────────────────────────────
+
+  Detailed market data view displayed in the "Market" tab.
+
+  Sections:
+    • Big price display with directional arrow and % change (₹)
+    • Session range bar: low–high with positioned dot for current close
+    • OHLC grid: 4-column layout (Open, High, Low, Close) in ₹
+    • Technical indicators grid: SMA20, SMA50, BB Upper, BB Lower, BB Mid,
+      Simulated Price — all in ₹
+    • SMA crossover signal badge:
+        "▲ BULLISH Golden Cross" (green) when SMA20 > SMA50
+        "▼ BEARISH Death Cross" (red) when SMA20 < SMA50
+    • Volatility & Volume section:
+        Current volatility, average volatility, average volume, total bars
+        Volatility meter bar (gradient green → amber → red, 5% max scale)
+    • Crash Active badge when crash is in effect
+
+
+────────────────────────────────────────────────────────────────────────────────
+6.8  AgentsPanel (components/AgentsPanel.jsx — 687 lines)              ★ Phase 2
+────────────────────────────────────────────────────────────────────────────────
+
+  Rich, interactive agent display panel with expandable sections.
+  Now shows ALL 7 agents — system agents + trading agents.            ★ Phase 2
+
+  Props: agents, tradeLog, headAgent, regulatorAgent, systemRisk      ★ Phase 2
+
+  Summary Bar:
+    Header shows "⬡ AI Agents" with "7 agents · N total trades" badge.
+    Horizontal scrollable quick-select buttons for 5 trading agents
+    with icon, name, and return % — click to expand agent card below.
+
+  System Agent Cards (side-by-side grid):                              ★ Phase 2
+    1. Orchestrator Card (🧠 cyan accent):
+       • Status badge (ACTIVE / HALTED)
+       • Step progress (current/max)
+       • Run ID (truncated)
+       • Crash status (YES/NO)
+       • Circuit breakers active count
+       • Total AUM from systemRisk
+    2. Regulator Card (⚖ amber accent):
+       • Status badge (ACTIVE / HALTED)
+       • Approved / Warned / Blocked counters (color-coded)
+       • Compliance rate bar (green=approvals, amber=warnings)
+       • Rules enforced as tag chips (6 rules)
+
+  Trading Agent Metadata:
+    Each of 5 agents has: icon emoji (🛡 🚀 ↩ 🎲 🦈), accent color,
+    strategy description, style label (Defensive/Aggressive/Contrarian/
+    Random/Manipulative)
+
+  Trading Agent Card Features:
+    • Portfolio value (₹) with allocation progress bar
+    • Cash / holdings breakdown
+    • SparkBar: custom SVG mini bar chart of portfolio history
+    • Risk metric chips (flex-wrap, color-coded):
+        Return % (green/red), Drawdown %, Max DD %, Sharpe Ratio
+    • Last action badge: ▲ BUY (green) / ▼ SELL (red) / HOLD (muted)
+    • Reasoning box: purple-bordered box with 💭 emoji prefix
+    • Memory buffer size indicator
+
+  Expandable Sections:
+    1. Trade History: scrollable table per agent
+       (Step, Side, Qty, Price ₹, Value ₹, Status)
+    2. AI Pipeline View: 4-step visualization
+       ① Perceive → ② Reason → ③ Act → ④ Result
+       With colored labels and content from agent.latest_memory
+
+  Visual States:
+    • Halted agents: red accent
     • Inactive agents: dimmed opacity
 
 
 ────────────────────────────────────────────────────────────────────────────────
-6.6  PerformanceCharts (components/PerformanceCharts.jsx)
+6.9  StatsPanel (components/StatsPanel.jsx)
 ────────────────────────────────────────────────────────────────────────────────
 
-  Two side-by-side charts:
+  Simulation statistics dashboard displayed in the "Stats" tab.
 
-  1. Portfolio Performance (LineChart)
-     - One line per agent (5 colors)
-     - Shows portfolio value over time
-     - Data reconstructed from trade log
+  Sections:
+    • Simulation Summary: Total AUM (₹), Cash Reserves (₹), Active Agents
+    • Trading Activity: Total Trades, Buys, Sells, Blocked, buy/sell ratio bar
+    • Agent Leaderboard: sorted by return %, medal emojis (🥇🥈🥉),
+      portfolio value in ₹
+    • Risk Metrics: Avg Return %, Avg Sharpe, Max Drawdown %,
+      Total Violations, Best/Worst Agent names
 
-  2. Regulatory Violations (BarChart)
-     - Bar per agent
-     - Counts WARN + BLOCK events from regulation log
-     - Color-coded per agent
+  Uses useMemo for computed stats. Pure inline styles.
 
 
 ────────────────────────────────────────────────────────────────────────────────
-6.7  RiskOverviewPanel (components/RiskOverviewPanel.jsx)
+6.10  HelpPanel (components/HelpPanel.jsx)
+────────────────────────────────────────────────────────────────────────────────
+
+  In-app documentation and help page displayed in the "Help" tab.
+
+  Sections:
+    • Hero card with gradient title — "7 autonomous AI agents"        ★ Phase 2
+    • System agents section: Orchestrator (🧠) + Regulator (⚖)        ★ Phase 2
+      with sub-header "System Agents"
+    • Trading agents section: 5 AI agent descriptions with colored
+      accent cards, sub-header "Trading Agents"
+      (Conservative, Momentum, MeanReversion, NoiseTrader, Adversarial)
+    • AI Pipeline visualization: Perceive → Reason → Act → Regulate
+      with step descriptions (Regulate mentions escalation/cooldown)   ★ Phase 2
+    • Controls guide: what each button does (₹1,00,000 starting)
+    • Navigation tabs guide: Agents tab mentions all 7 agents          ★ Phase 2
+    • Tech stack grid: TradingView v5, React 18, Flask, Recharts, etc.
+
+  Internal helper components: PipelineStep, AgentRow, Key
+
+
+────────────────────────────────────────────────────────────────────────────────
+6.11  RiskOverviewPanel (components/RiskOverviewPanel.jsx)
 ────────────────────────────────────────────────────────────────────────────────
 
   System-wide risk dashboard.
@@ -847,7 +1125,7 @@ Class: SimulationDB
     LOW    (green)  – otherwise
 
   Metric Cards:
-    • Total AUM (Assets Under Management)
+    • Total AUM (₹)
     • Exposure %
     • Global Drawdown %
     • Open Positions Count
@@ -860,7 +1138,24 @@ Class: SimulationDB
 
 
 ────────────────────────────────────────────────────────────────────────────────
-6.8  TradeLogTable (components/TradeLogTable.jsx)
+6.12  PerformanceCharts (components/PerformanceCharts.jsx — Recharts)
+────────────────────────────────────────────────────────────────────────────────
+
+  Two side-by-side charts (uses Recharts library):
+
+  1. Portfolio Performance (LineChart)
+     - One line per agent (neon colors: #00d4ff, #00ff88, #ffb800, #a855f7, #ff3b5c)
+     - Shows portfolio value over time
+     - Data reconstructed from trade log
+     - Neon-styled tooltips (dark glass bg, cyan border, JetBrains Mono)
+
+  2. Regulatory Violations (BarChart)
+     - Bar per agent (same neon color palette)
+     - Counts WARN + BLOCK events from regulation log
+
+
+────────────────────────────────────────────────────────────────────────────────
+6.13  TradeLogTable (components/TradeLogTable.jsx)
 ────────────────────────────────────────────────────────────────────────────────
 
   Scrollable, filterable trade log.
@@ -868,7 +1163,7 @@ Class: SimulationDB
   Features:
     • Agent filter dropdown (ALL or specific agent)
     • Shows last 100 entries (newest first)
-    • Columns: Step, Agent, Action, Price, Qty, Portfolio,
+    • Columns: Step, Agent, Action, Price (₹), Qty, Portfolio (₹),
                Reason (truncated 60 chars), Decision (color-coded),
                Regulator Reason (truncated 50 chars)
     • Decision color coding:
@@ -878,7 +1173,7 @@ Class: SimulationDB
 
 
 ────────────────────────────────────────────────────────────────────────────────
-6.9  RegulationLogTable (components/RegulationLogTable.jsx)
+6.14  RegulationLogTable (components/RegulationLogTable.jsx)
 ────────────────────────────────────────────────────────────────────────────────
 
   Scrollable regulation event log.
@@ -891,7 +1186,7 @@ Class: SimulationDB
 
 
 ────────────────────────────────────────────────────────────────────────────────
-6.10  SettingsModal (components/SettingsModal.jsx)
+6.15  SettingsModal (components/SettingsModal.jsx)
 ────────────────────────────────────────────────────────────────────────────────
 
   Modal overlay for per-agent parameter tuning.
@@ -912,31 +1207,46 @@ Class: SimulationDB
 
 
 ────────────────────────────────────────────────────────────────────────────────
-6.11  CSS / Theming (index.css — 585 lines)
+6.16  CSS / Theming (index.css — 1066 lines)
 ────────────────────────────────────────────────────────────────────────────────
 
-  Theme: Dark mode (#0f1117 background)
-  Font: Segoe UI / system fonts
-  Max width: 1440px centered
+  Theme: Dual-theme support (dark + light) via body class toggling
+    Dark:  #07080d background, neon terminal aesthetic
+    Light: white backgrounds, reduced glows, adjusted palette
 
-  Major sections:
-    • Reset & base styles
-    • 2-column layout (.main-grid: 300px sidebar + 1fr)
-    • Card styling (.card: #1a1d2e bg, rounded corners)
-    • Form controls (selects, inputs)
-    • Speed/batch sliders
-    • Agent toggle checkboxes
-    • Button variants (primary, success, warning, danger, crash, settings)
-    • Status badges (running, paused, finished, idle, halted, inactive, crash)
-    • Agent cards grid (auto-fill, halted/inactive variants)
-    • Risk panel with crash border glow
-    • Step scrubber range slider
-    • Trade/regulation log tables (sticky headers, color-coded decisions)
-    • Performance charts grid (2-column)
-    • Modal overlay with blur
-    • Crash flash animation (@keyframes crash-bg-flash)
-    • Responsive breakpoint (single column below 1000px)
-    • Error banner styling
+  Persistence: theme saved to localStorage
+
+  CSS Variables: 58 custom properties in :root covering colors, glows,
+    gradients, border-radius, transitions
+
+  Font Stack:
+    Space Grotesk (headings), Inter (body), JetBrains Mono (data/mono)
+
+  Layout:
+    • 3-column grid (.olymp-layout: 72px + 1fr + 310px)
+    • Full width, no max-width constraint
+    • TopBar: sticky, 56px, glassmorphism (backdrop-filter: blur + saturate)
+
+  Card Styling:
+    Glassmorphism: rgba(14,17,28,0.75) + backdrop-filter: blur(12px) saturate(1.3)
+
+  Scrollbar: Custom thin WebKit scrollbar (6px, translucent)
+
+  Animations:
+    • crash-bg-flash (red pulse on crash trigger)
+    • fadeIn (staggered agent/risk cards)
+    • pulse (live indicator dot)
+    • status-glow (running badge)
+    • crash-pulse (crash button)
+
+  Responsive Breakpoints:
+    • 1400px: narrower right panel
+    • 1024px: single column, sidebar hidden, right panel adjusts
+    • 640px: compact TopBar
+
+  Light Theme (.theme-light):
+    Full override of all CSS variables — white/light backgrounds,
+    reduced neon glows, adjusted text colors
 
 
 ================================================================================
@@ -946,67 +1256,97 @@ Class: SimulationDB
   Core Simulation:
     [1]  Real market data via yfinance (any ticker, period, interval)
     [2]  5 autonomous trading agents with distinct strategies
-    [3]  Regulator / compliance agent reviewing every trade (5 rules)
+    [3]  Regulator / compliance agent reviewing every trade (6 rules)
     [4]  OrchestratorAgent (Head Agent) coordinating entire system
     [5]  Step-by-step simulation with full state tracking
     [6]  Endogenous price impact model (agent order flow moves price)
 
+  Agentic AI Pipeline:                                        ★ Phase 2 NEW
+    [7]  Perceive → Reason → Act pipeline for every agent
+    [8]  Per-agent memory buffer storing full pipeline history
+    [9]  Performance stats tracking (pnl, wins, losses, max_drawdown)
+    [10] AI Pipeline visualization in AgentsPanel (4-step view)
+    [11] Memory size indicator per agent
+
   Agent Features:
-    [7]  Structured decision dicts: {action, quantity, reasoning}
-    [8]  Per-agent goal attribute (strategic objective)
-    [9]  build_reasoning() helper for concise indicator summaries
-    [10] Per-agent configurable parameters (via Settings Modal)
-    [11] Agent enable/disable toggles (runtime)
-    [12] Individual portfolio tracking ($100K initial per agent)
-    [13] Per-agent risk metrics (return %, drawdown, Sharpe ratio)
-    [14] Human-readable reasoning strings for every decision
-    [15] Per-agent circuit breakers (auto-halt at >10% drawdown)
+    [12] Structured decision dicts: {action, quantity, reasoning}
+    [13] Per-agent goal attribute (strategic objective)
+    [14] build_reasoning() helper for concise indicator summaries
+    [15] Per-agent configurable parameters (via Settings Modal)
+    [16] Agent enable/disable toggles (runtime)
+    [17] Individual portfolio tracking (₹1,00,000 initial per agent)
+    [18] Per-agent risk metrics (return %, drawdown, Sharpe ratio)
+    [19] Human-readable reasoning strings for every decision
+    [20] Per-agent circuit breakers (auto-halt at >10% drawdown)
 
   Market Features:
-    [16] Technical indicators: SMA20, SMA50, Bollinger Bands, Volatility
-    [17] Candlestick chart toggle (line ↔ candlestick)
-    [18] Trade markers on chart (▲ BUY / ▼ SELL overlays)
-    [19] Step scrubber / jump to any step
+    [21] Technical indicators: SMA20, SMA50, Bollinger Bands, Volatility
+    [22] TradingView Lightweight Charts v5 candlestick chart             ★ Phase 2
+    [23] Toggle between Candlestick and Line chart modes
+    [24] Trade markers on chart (▲ BUY / ▼ SELL via TradingView markers)
+    [25] Floating legend overlay with live OHLC + indicator values
+    [26] Step scrubber with debounced drag (fire on release only)         ★ Phase 2
+    [27] Max reached step enforcement (can't jump past computed steps)    ★ Phase 2
+    [28] Fast rewind without re-downloading data                          ★ Phase 2
 
   Whale Manipulation / Cascade Crash:
-    [20] Trigger Crash button → whale dumps 100% of holdings
-    [21] 15-20% OHLC price drop + indicator recalculation
-    [22] Endogenous price impact amplifies the crash
-    [23] Momentum / other agents react naturally (stop-loss, trend reversal)
-    [24] Global circuit breaker halts ALL trading at −15% system drawdown
-    [25] trading_status: "HALTED_BY_CIRCUIT_BREAKER" exposed to frontend
+    [29] Trigger Crash button → whale dumps 100% of holdings
+    [30] 15-20% OHLC price drop + indicator recalculation
+    [31] Endogenous price impact amplifies the crash
+    [32] Momentum / other agents react naturally (stop-loss, trend reversal)
+    [33] Global circuit breaker halts ALL trading at −15% system drawdown
+    [34] trading_status: "HALTED_BY_CIRCUIT_BREAKER" exposed to frontend
 
   Risk & Compliance:
-    [26] System-wide risk dashboard (AUM, exposure, drawdown, violations)
-    [27] Risk level assessment (LOW / MEDIUM / HIGH)
-    [28] Violation heatmap (per-agent violation bar chart)
-    [29] 5 compliance rules:
+    [35] System-wide risk dashboard (AUM, exposure, drawdown, violations)
+    [36] Risk level assessment (LOW / MEDIUM / HIGH)
+    [37] Violation heatmap (per-agent violation bar chart)
+    [38] 6 compliance rules:                                         ★ Phase 2
            MaxPositionLimit, MaxOrderSize, BurstTrading,
-           AdversarialFlag, ContrarianCrashDetection
-    [30] Regulator reads agent reasoning to flag contrarian crash trades
+           AdversarialFlag, ContrarianCrashDetection,
+           RepeatOffender (warnings → block escalation)
+    [39] Regulator reads agent reasoning to flag contrarian crash trades
+    [39b] Repeat-offender escalation: ≥5 warnings → BLOCK +             ★ Phase 2
+           10-step cooldown; warning count resets after cooldown
 
-  UI / UX:
-    [31] Auto-run with configurable speed slider (50ms – 1000ms)
-    [32] Batch step size control (1 – 20 steps per tick)
-    [33] Dark theme with responsive layout
-    [34] Filterable trade log table (by agent)
-    [35] Regulation event log table
-    [36] Portfolio performance line chart (per agent)
-    [37] Crash flash animation (red pulse effect)
-    [38] Status badges (idle / running / paused / finished / halted)
+  UI / UX:                                                    ★ Phase 2 NEW
+    [40] 3-column layout: icon sidebar + center + controls panel
+    [41] 5-tab navigation: Trades · Market · Agents · Stats · Help
+    [42] TopBar with stock selector, portfolio balance (₹), crash badge
+    [43] Dark + Light theme toggle (persisted to localStorage)
+    [44] Neon terminal aesthetic (glassmorphism, backdrop blur, CSS vars)
+    [45] Fonts: Space Grotesk + Inter + JetBrains Mono
+    [46] MarketPanel: OHLC, indicators, SMA crossover signal, volatility meter
+    [47] StatsPanel: AUM, leaderboard, risk metrics, trading activity
+    [48] HelpPanel: 7 agent docs (system+trading), AI pipeline, controls, tech stack
+    [49] AgentsPanel: Orchestrator + Regulator system cards at top,         ★ Phase 2
+         5 trading agent rich cards with SparkBar, risk chips, expandable
+         trade history + AI pipeline visualization
+    [50] Auto-run with configurable speed slider (50ms – 1000ms)
+    [51] Batch step size control (1 – 20 steps per tick)
+    [52] Filterable trade log table (by agent)
+    [53] Regulation event log table
+    [54] Portfolio performance line chart per agent (Recharts, neon colors)
+    [55] Crash flash animation (red pulse effect)
+    [56] Status badges (idle / running / paused / finished / halted)
+    [57] Latest trade notification bar below chart
+    [58] Responsive design (3 breakpoints: 1400px, 1024px, 640px)
+    [59] Currency in ₹ (INR) throughout
 
   Data & Storage:
-    [39] SQLite persistent database (devhack.db)
-    [40] Dual-write logging (in-memory + SQLite)
-    [41] Per-run UUID tracking
-    [42] Full audit trail (every trade + regulation event stored)
+    [60] SQLite persistent database (devhack.db)
+    [61] Dual-write logging (in-memory + SQLite)
+    [62] Per-run UUID tracking
+    [63] Full audit trail (every trade + regulation event stored)
+    [64] Safe commit handling (_safe_commit) for resilient DB writes       ★ Phase 2
 
   Architecture:
-    [43] Head Agent / Orchestrator pattern
-    [44] Facade pattern (Simulation wraps Orchestrator)
-    [45] Clean agent abstraction (base class + 5 implementations)
-    [46] REST API with 6 endpoints
-    [47] Proxy-based dev setup (Vite → Flask)
+    [65] Head Agent / Orchestrator pattern
+    [66] Facade pattern (Simulation wraps Orchestrator)
+    [67] Agentic pipeline abstraction (Perceive → Reason → Act)           ★ Phase 2
+    [68] Clean agent abstraction (base class + 5 implementations)
+    [69] REST API with 6 endpoints
+    [70] Proxy-based dev setup (Vite → Flask)
 
 
 ================================================================================
@@ -1030,6 +1370,8 @@ Class: SimulationDB
   ├──────────────────────┼────────┼───────────────────────────────────────┤
   │ /api/jump            │ POST   │ Jump to specific step                 │
   │                      │        │ Body: {step: 42}                      │
+  │                      │        │ (120s timeout, DB writes disabled     │
+  │                      │        │  during replay for stability)         │
   ├──────────────────────┼────────┼───────────────────────────────────────┤
   │ /api/trigger-crash   │ POST   │ Trigger market crash event            │
   ├──────────────────────┼────────┼───────────────────────────────────────┤
@@ -1094,11 +1436,14 @@ Class: SimulationDB
                  ▼
     ┌────────────────────────────┐
     │  2. For each active agent: │
-    │     agent.observe(state)   │  ← Agent receives market data
-    │     action = agent.decide()│  ← Returns {action, quantity, reasoning}
-    │                            │    • On crash-trigger step: whale’s
-    │                            │      decide() overridden with forced
-    │                            │      full-dump SELL action
+    │     action = agent.step()  │  ← Runs Perceive → Reason → Act pipeline
+    │                            │    Returns {action, quantity, reasoning}
+    │                            │    + appends full record to agent.memory
+    │                            │
+    │                            │    • On crash-trigger step: whale's
+    │                            │      pipeline is overridden — perceive()
+    │                            │      runs, then act() called directly
+    │                            │      with forced full-dump SELL
     └────────────┬───────────────┘
                  │
                  ▼
@@ -1122,10 +1467,11 @@ Class: SimulationDB
     └────────────┬───────────────┘
                  │
                  ▼
-    ┌────────────────────────────┐
-    │  6. agent.update_after_step│  ← Reward / adaptation callback
-    │     (reward, new_state)    │
-    └────────────┬───────────────┘
+    ┌─────────────────────────────┐
+    │  6. agent.update_after_step │  ← Updates performance_stats:
+    │     (reward, new_state)     │    pnl, wins/losses, max_drawdown
+    │                             │    Stamps memory[-1] with result
+    └────────────┬────────────────┘
                  │
                  ▼
     ┌────────────────────────────┐
@@ -1153,7 +1499,7 @@ Class: SimulationDB
     │  1. Ensure whale has position (buy 90% if empty) │
     │  2. Drop OHLC 15-20%, recompute indicators       │
     │  3. Mark crash_mode_active = True                 │
-    │  4. Run one step with whale’s decide() overridden │
+    │  4. Run one step with whale's pipeline overridden │
     └────────────────────────┬───────────────────────┘
                                  │
                                  ▼
@@ -1179,20 +1525,93 @@ Class: SimulationDB
 
 
 ================================================================================
-11. DEVHACK 2026 PHASE-1 COMPLIANCE
+11. AGENTIC AI PIPELINE (Perceive → Reason → Act)
+================================================================================
+
+  Every trading agent implements a 3-step agentic pipeline, coordinated
+  by the base TradingAgent.step() method:
+
+  ┌──────────────────────────────────────────────────────────────────────┐
+  │                    agent.step(market_state)                          │
+  │                                                                      │
+  │  ┌─────────────────────────────────────────────────────────────┐    │
+  │  │  ① PERCEIVE  — agent.perceive(market_state)                 │    │
+  │  │     Extract relevant features from raw market state.         │    │
+  │  │     Each agent extracts different features:                  │    │
+  │  │       Conservative: close, SMA20/50, volatility, avg_cost   │    │
+  │  │       Momentum:     close, SMA20/50                          │    │
+  │  │       MeanReversion: close, BB_MID, recomputed BB_UP/LOW    │    │
+  │  │       NoiseTrader:  close, random rolls                      │    │
+  │  │       Adversarial:  close, volume, unrealised gain           │    │
+  │  │     Returns: observation dict                                │    │
+  │  └──────────────────────────┬──────────────────────────────────┘    │
+  │                              │                                       │
+  │                              ▼                                       │
+  │  ┌─────────────────────────────────────────────────────────────┐    │
+  │  │  ② REASON  — agent.reason(observation)                      │    │
+  │  │     Apply strategy-specific decision logic.                  │    │
+  │  │     Returns: {action, quantity, reasoning}                   │    │
+  │  │                                                              │    │
+  │  │     Conservative: volatility filter + stop-loss + SMA entry  │    │
+  │  │     Momentum:     SMA20/50 golden/death cross               │    │
+  │  │     MeanReversion: Bollinger Band mean reversion              │    │
+  │  │     NoiseTrader:  random probability-based                   │    │
+  │  │     Adversarial:  pump-and-dump phase machine                │    │
+  │  └──────────────────────────┬──────────────────────────────────┘    │
+  │                              │                                       │
+  │                              ▼                                       │
+  │  ┌─────────────────────────────────────────────────────────────┐    │
+  │  │  ③ ACT  — agent.act(decision)                               │    │
+  │  │     Converts internal decision to action dict.               │    │
+  │  │     Sets last_action, last_reasoning.                        │    │
+  │  │     Returns: {action, quantity, reasoning}                   │    │
+  │  └──────────────────────────┬──────────────────────────────────┘    │
+  │                              │                                       │
+  │                              ▼                                       │
+  │  ┌─────────────────────────────────────────────────────────────┐    │
+  │  │  Memory: append {observation, decision, action} to memory   │    │
+  │  └─────────────────────────────────────────────────────────────┘    │
+  │                                                                      │
+  │  After execution, Orchestrator sends trade to Regulator:             │
+  │  ┌─────────────────────────────────────────────────────────────┐    │
+  │  │  ④ REGULATE  — regulator.review_trade(...)                  │    │
+  │  │     5 compliance rules → APPROVE / WARN / BLOCK             │    │
+  │  └─────────────────────────────────────────────────────────────┘    │
+  │                                                                      │
+  │  After step completion:                                              │
+  │  ┌─────────────────────────────────────────────────────────────┐    │
+  │  │  ⑤ UPDATE  — agent.update_after_step(reward, state)         │    │
+  │  │     Updates performance_stats (pnl, wins, losses, drawdown) │    │
+  │  │     Stamps memory[-1]["result"] with outcome                │    │
+  │  └─────────────────────────────────────────────────────────────┘    │
+  └──────────────────────────────────────────────────────────────────────┘
+
+
+================================================================================
+12. DEVHACK 2026 PHASE-2 COMPLIANCE
 ================================================================================
 
   ┌─────────────────────────────────┬────────────────────────────────────────┐
   │ Requirement                     │ How Satisfied                          │
   ├─────────────────────────────────┼────────────────────────────────────────┤
-  │ Minimum 4 agents                │ 5 trading agents + 1 Regulator = 6    │
-  │                                 │ (Conservative, Momentum, MeanReversion │
-  │                                 │  NoiseTrader, Adversarial)             │
+  │ Minimum 2 agents demonstrated   │ 5 trading agents + 1 Regulator = 6    │
+  │ (from PPT)                      │ + OrchestratorAgent as Head Agent      │
+  │                                 │ = 7 total agents                       │
+  ├─────────────────────────────────┼────────────────────────────────────────┤
+  │ Core agents highlighted (5+     │ OrchestratorAgent (Head Agent) and     │
+  │ agents → 2 core agents)         │ RegulatorAgent as the 2 core agents   │
+  │                                 │ 5 trading agents as supporting agents  │
   ├─────────────────────────────────┼────────────────────────────────────────┤
   │ 1 Head Agent (Orchestrator)     │ OrchestratorAgent class in             │
   │                                 │ simulation/orchestrator.py             │
   │                                 │ Owns clock, coordinates all agents,    │
   │                                 │ triggers whale crash + global halt     │
+  ├─────────────────────────────────┼────────────────────────────────────────┤
+  │ Agent roles, responsibilities   │ Each agent has perceive/reason/act     │
+  │ and interactions explained      │ pipeline, structured decisions with    │
+  │                                 │ reasoning, and clear goal. Interaction │
+  │                                 │ flow: Market → Agent → Regulator →     │
+  │                                 │ Execute + whale crash cascade          │
   ├─────────────────────────────────┼────────────────────────────────────────┤
   │ Must have a backend             │ Flask REST API (6 endpoints)           │
   │                                 │ Python backend with full business logic│
@@ -1201,29 +1620,120 @@ Class: SimulationDB
   │                                 │ Dual-write: memory + persistent DB     │
   │                                 │ Full audit trail of all trades + events│
   ├─────────────────────────────────┼────────────────────────────────────────┤
-  │ Clear agent roles               │ Each agent has Goal / Inputs /         │
-  │                                 │ Decision Logic documented in docstring │
-  │                                 │ Structured {action, qty, reasoning}    │
-  │                                 │ dict for every decision                │
+  │ Live demo of functioning agents │ Step-by-step or auto-run mode shows    │
+  │                                 │ all agents making real-time decisions   │
+  │                                 │ with reasoning visible in UI            │
   ├─────────────────────────────────┼────────────────────────────────────────┤
-  │ Agent interaction flow          │ 8-step flow + global halt guard in     │
-  │                                 │ OrchestratorAgent.run_step()           │
-  │                                 │ Market → Agent → Regulator → Execute   │
-  │                                 │ + whale crash cascade flow             │
+  │ Final output preview / complete │ Full UI: TradingView chart, agent      │
+  │ execution result                │ leaderboard, risk metrics, trade logs, │
+  │                                 │ regulation events, statistics dashboard│
   ├─────────────────────────────────┼────────────────────────────────────────┤
-  │ Autonomous, goal-driven system  │ All agents are autonomous rule-based   │
-  │                                 │ decision makers (NOT chatbots)         │
-  │                                 │ Each has distinct strategy, goal, and  │
-  │                                 │ produces structured reasoning          │
+  │ Local code execution            │ Backend: python app.py (port 5000)     │
+  │                                 │ Frontend: npm run dev (port 5173)      │
+  │                                 │ Runs entirely on localhost              │
   ├─────────────────────────────────┼────────────────────────────────────────┤
-  │ Flowcharts / architecture       │ ASCII diagrams in code + report        │
-  │                                 │ Interaction flow + whale crash flow    │
-  │                                 │ documented with full diagrams          │
+  │ Continuous recording (5-10 min) │ Full prototype supports single-session │
+  │                                 │ demo: init → step → auto-run → crash   │
+  │                                 │ → circuit breaker → review all tabs    │
+  ├─────────────────────────────────┼────────────────────────────────────────┤
+  │ GitHub repo with readable code  │ Public repo with clean directory       │
+  │                                 │ structure, docstrings, and this report │
   └─────────────────────────────────┴────────────────────────────────────────┘
 
 
 ================================================================================
-12. HOW TO RUN
+13. PHASE 2 ENHANCEMENTS (What Changed from Phase 1)
+================================================================================
+
+  Backend Changes:
+    ─────────────
+    • Agentic Pipeline: All 5 agents refactored from observe_market_state() +
+      decide() to perceive() → reason() → act() pipeline with composite
+      step() method.  Old methods removed.
+
+    • Agent Memory: Each agent now stores full pipeline history in a
+      memory list[dict] — observation, decision, action per step.
+
+    • Agent Performance Stats: New performance_stats dict tracking
+      pnl, wins, losses, max_drawdown.  update_after_step() now has
+      real implementation updating these.
+
+    • Agent Serialization: to_dict() now includes memory_size,
+      latest_memory, performance_stats for frontend consumption.
+
+    • Market Reset: New market.reset() method — rewinds to step 0
+      without re-downloading data from yfinance.
+
+    • Orchestrator Reinit: New _reinit_without_download() method for
+      fast rewind during jump operations.
+
+    • Jump Stability: jump_to_step() now disables DB writes during
+      replay (logger._db = None in try/finally) to prevent SQLite
+      transaction errors.
+
+    • Safe DB Commits: New _safe_commit() in SimulationDB that checks
+      conn.in_transaction before committing.
+
+  Frontend Changes:
+    ──────────────
+    • Complete UI Redesign: 2-column layout replaced with 3-column
+      layout (72px sidebar + 1fr center + 310px controls).
+
+    • Tab Navigation: New LeftSidebar with 5 tabs (Trades, Market,
+      Agents, Stats, Help). Only active tab's content is rendered.
+
+    • TopBar: New sticky header with stock selector, portfolio balance
+      (₹), crash indicator, theme toggle, profile button.
+
+    • RightTradePanel: Replaced ControlsPanel as the primary control
+      surface (interval selector, speed/batch sliders, agent toggles,
+      action buttons).
+
+    • TradingView Charts: PriceChart completely rewritten from Recharts
+      to TradingView Lightweight Charts v5. Professional candlestick
+      rendering with crosshair, floating legend, and series markers.
+
+    • AgentsPanel Rewrite: 687-line rich component with SparkBar charts,
+      risk metric chips, expandable trade history + AI pipeline view.
+      Now shows Orchestrator + Regulator system agent cards at top.
+
+    • MarketPanel: New — OHLC grid, technical indicators, SMA crossover
+      signal, volatility meter with gradient bar.
+
+    • StatsPanel: New — AUM summary, trading activity metrics, agent
+      leaderboard, aggregate risk metrics.
+
+    • HelpPanel: New — in-app documentation with 7 agent descriptions
+      (system + trading), AI pipeline visualization with escalation
+      note, controls guide, tech stack.
+
+    • Regulator Escalation: New RepeatOffender rule — ≥5 cumulative
+      warnings → BLOCK + 10-step cooldown.  Backend snapshot now
+      includes regulator_agent block (approvals, warnings, blocks,
+      rules_enforced, compliance status).  AgentsPanel receives and
+      displays this as a dedicated Regulator card with live stats.
+
+    • Theme System: Dark + Light theme with localStorage persistence.
+      58 CSS custom properties. Glassmorphism card styling.
+
+    • Neon Aesthetic: Space Grotesk + Inter + JetBrains Mono fonts.
+      Neon color palette: cyan #00d4ff, green #00ff88, purple #a855f7,
+      amber #ffb800, red #ff3b5c.
+
+    • Currency: All USD ($) changed to INR (₹) across all components.
+
+    • Scrubber Improvements: Debounced drag (fires on release only),
+      maxReachedStep enforcement, jumpingRef mutex for concurrent
+      jump prevention.
+
+    • Responsive Design: 3 breakpoints (1400px, 1024px, 640px) vs
+      single breakpoint in Phase 1.
+
+    • CSS: 585 lines → 1066 lines.
+
+
+================================================================================
+14. HOW TO RUN
 ================================================================================
 
   Prerequisites:
@@ -1243,11 +1753,12 @@ Class: SimulationDB
     # Runs on http://localhost:5173
 
   Open http://localhost:5173 in a browser.
-  Select a ticker, period, interval → click "Start" → use Auto-Run or Step.
+  Select a ticker from the TopBar → choose period → click "Initialize"
+  in the right panel → use "Run" for auto-run or "Step" for manual.
 
 
 ================================================================================
-13. DEPENDENCIES
+15. DEPENDENCIES
 ================================================================================
 
   Backend (requirements.txt):
@@ -1259,12 +1770,13 @@ Class: SimulationDB
     (sqlite3 is built into Python)
 
   Frontend (package.json):
-    react         ^18.3.0
-    react-dom     ^18.3.0
-    recharts      ^2.12.0
-    axios         ^1.7.0
-    vite          ^5.4.0     (dev)
-    @vitejs/plugin-react ^4.3.0 (dev)
+    react              ^18.3.0
+    react-dom          ^18.3.0
+    lightweight-charts  ^5.1.0     ← TradingView charting (Phase 2)
+    recharts           ^2.12.0
+    axios              ^1.7.0
+    vite               ^5.4.0     (dev)
+    @vitejs/plugin-react ^4.3.0   (dev)
 
 
 ================================================================================
