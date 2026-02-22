@@ -77,14 +77,26 @@ export default function HelpPanel() {
           fontSize: 11, color: C.muted, maxWidth: 480, margin: '0 auto', lineHeight: 1.7,
           fontFamily: "'JetBrains Mono', monospace",
         }}>
-          5 autonomous AI agents trading on real market data, each with unique strategies,
-          monitored by a regulatory system that blocks risky manipulation in real-time.
+          7 autonomous AI agents — 1 orchestrator, 5 traders, and 1 regulator — operating on
+          real market data with unique strategies, live compliance enforcement, and real-time risk monitoring.
         </p>
       </div>
 
       {/* ── The 5 Agents ── */}
       <div className="card" style={{ padding: '18px 20px' }}>
-        <h2 style={{ marginBottom: 14 }}>⬡ The 5 AI Agents</h2>
+        <h2 style={{ marginBottom: 14 }}>⬡ The 7 AI Agents</h2>
+
+        {/* System Agents */}
+        <div style={{ fontSize: 9, fontWeight: 700, color: C.muted, textTransform: 'uppercase', letterSpacing: 1, marginBottom: 8, fontFamily: "'JetBrains Mono', monospace" }}>System Agents</div>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 8, marginBottom: 14 }}>
+          <AgentRow icon="🧠" name="Orchestrator" accent={C.cyan}
+            desc="Head Agent. Coordinates all trading agents, manages the simulation loop, triggers crash events, and enforces circuit breakers." />
+          <AgentRow icon="⚖" name="Regulator" accent={C.amber}
+            desc="Compliance Agent. Reviews every proposed trade against 6 rules (position limits, order size, burst trading, manipulation, crash risk, repeat offender escalation). Can APPROVE, WARN, or BLOCK." />
+        </div>
+
+        {/* Trading Agents */}
+        <div style={{ fontSize: 9, fontWeight: 700, color: C.muted, textTransform: 'uppercase', letterSpacing: 1, marginBottom: 8, fontFamily: "'JetBrains Mono', monospace" }}>Trading Agents</div>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 8 }}>
           <AgentRow icon="🛡" name="Conservative" accent={C.cyan}
             desc="Risk-averse. Trades only when volatility is low. Strict stop-losses and small position sizes." />
@@ -113,7 +125,7 @@ export default function HelpPanel() {
           <PipelineStep num="3" label="Act" color={C.amber}
             desc="Executes BUY, SELL, or HOLD. The trade is submitted to the regulator for compliance checking." />
           <PipelineStep num="4" label="Regulate" color={C.red}
-            desc="The regulator validates the trade against risk limits. Manipulative or overly risky trades are BLOCKED." />
+            desc="The regulator validates the trade against risk limits. Risky trades get WARNED (quantity reduced). After 5 cumulative warnings, the agent is BLOCKED for a 10-step cooldown." />
         </div>
       </div>
 
@@ -124,7 +136,7 @@ export default function HelpPanel() {
           <h2 style={{ marginBottom: 12 }}>⇅ Controls Guide</h2>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
             {[
-              { key: 'Initialize', desc: 'Fetches real market data via yfinance and sets up all agents with $100K starting capital.', color: C.cyan },
+              { key: 'Initialize', desc: 'Fetches real market data via yfinance and sets up all agents with ₹1,00,000 starting capital.', color: C.cyan },
               { key: 'Step', desc: 'Advance by one (or batch) candle. Each agent perceives, reasons, and acts.', color: C.green },
               { key: 'Run / Pause', desc: 'Auto-step through the simulation at your configured delay speed.', color: C.green },
               { key: 'Crash', desc: 'Inject a sudden -15% market crash to stress-test agent resilience.', color: C.red },
@@ -152,7 +164,7 @@ export default function HelpPanel() {
             {[
               { icon: '⇅', label: 'Trades', desc: 'Chart, live trade notification, trade log & regulation log.', color: C.cyan },
               { icon: '◎', label: 'Market', desc: 'OHLC, technical indicators, volatility meter, session range.', color: C.green },
-              { icon: '⬡', label: 'Agents', desc: 'Agent cards, portfolio trends, AI pipeline & trade history.', color: C.purple },
+              { icon: '⬡', label: 'Agents', desc: 'All 7 agents — Orchestrator & Regulator status + 5 trading agent cards with portfolios, AI pipeline & trade history.', color: C.purple },
               { icon: '◈', label: 'Stats', desc: 'Leaderboard, risk metrics, performance charts, trading activity.', color: C.amber },
               { icon: '?', label: 'Help', desc: 'You are here! System overview and documentation.', color: C.muted },
             ].map((item, i) => (

@@ -251,7 +251,13 @@ export default function App() {
           {/* ── AGENTS TAB ── */}
           {activeTab === 'agents' && (
             <>
-              <AgentsPanel agents={snapshot?.agents} tradeLog={snapshot?.trade_log} />
+              <AgentsPanel
+                agents={snapshot?.agents}
+                tradeLog={snapshot?.trade_log}
+                headAgent={snapshot?.head_agent}
+                regulatorAgent={snapshot?.regulator_agent}
+                systemRisk={snapshot?.system_risk}
+              />
             </>
           )}
 
