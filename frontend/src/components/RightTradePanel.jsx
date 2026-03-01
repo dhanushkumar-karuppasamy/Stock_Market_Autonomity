@@ -5,12 +5,17 @@ export default function RightTradePanel({
   speedMs, setSpeedMs,
   batchSize, setBatchSize,
   activeAgents, allAgents, toggleAgent,
+  agentFollowers, setAgentFollowers,
   onStep, onAutoRun, onPause, onInit,
   status, step, maxSteps,
   crashActive, onCrash,
   onOpenSettings,
 }) {
   const INTERVALS = ['1m', '5m', '15m', '1h', '1d'];
+
+  const handleFollowerChange = (key, val) => {
+    setAgentFollowers(prev => ({ ...prev, [key]: Math.max(1, Math.min(200, parseInt(val) || 1)) }));
+  };
 
   return (
     <div className="olymp-right-panel">
@@ -57,17 +62,34 @@ export default function RightTradePanel({
       </div>
 
       <div className="panel-section">
-        <h3>Active Agents</h3>
+        <h3>Active Agents &amp; Followers</h3>
+        <p style={{ fontSize: 10, color: 'var(--text-muted)', marginBottom: 8, lineHeight: 1.4 }}>
+          Followers multiply market impact without affecting portfolio size.
+        </p>
         <div className="agents-toggle-list">
           {allAgents.map(a => (
-            <label key={a.key} className="agent-toggle">
-              <input
-                type="checkbox"
-                checked={activeAgents.includes(a.key)}
-                onChange={() => toggleAgent(a.key)}
-              />
-              <span>{a.label}</span>
-            </label>
+            <div key={a.key} className="agent-follower-row">
+              <label className="agent-toggle">
+                <input
+                  type="checkbox"
+                  checked={activeAgents.includes(a.key)}
+                  onChange={() => toggleAgent(a.key)}
+                />
+                <span>{a.label}</span>
+              </label>
+              <div className="follower-control">
+                <span className="follower-label">×{agentFollowers?.[a.key] ?? 1}</span>
+                <input
+                  type="number"
+                  min={1}
+                  max={200}
+                  value={agentFollowers?.[a.key] ?? 1}
+                  onChange={e => handleFollowerChange(a.key, e.target.value)}
+                  className="follower-input"
+                  title={`Followers for ${a.label}`}
+                />
+              </div>
+            </div>
           ))}
         </div>
       </div>

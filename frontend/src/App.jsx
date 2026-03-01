@@ -13,6 +13,7 @@ import SettingsModal from './components/SettingsModal';
 import MarketPanel from './components/MarketPanel';
 import StatsPanel from './components/StatsPanel';
 import HelpPanel from './components/HelpPanel';
+import BuilderPanel from './components/BuilderPanel';
 
 const ALL_AGENTS = [
   { key: 'conservative', label: 'Conservative' },
@@ -20,6 +21,7 @@ const ALL_AGENTS = [
   { key: 'meanreversion', label: 'MeanReversion' },
   { key: 'noisetrader', label: 'NoiseTrader' },
   { key: 'adversarial', label: 'Adversarial' },
+  { key: 'custom', label: 'Custom' },
 ];
 
 const DEFAULT_PARAMS = {
@@ -28,6 +30,16 @@ const DEFAULT_PARAMS = {
   meanreversion: { position_size_pct: 0.12, band_multiplier: 2.0 },
   noisetrader: { trade_probability: 0.15, position_size_pct: 0.02 },
   adversarial: { pump_fraction: 0.25, dump_threshold: 0.03, volume_low_pctile: 0.30, pump_probability: 0.20 },
+  custom: { position_size_pct: 0.10 },
+};
+
+const DEFAULT_FOLLOWERS = {
+  conservative: 1,
+  momentum: 1,
+  meanreversion: 1,
+  noisetrader: 1,
+  adversarial: 1,
+  custom: 1,
 };
 
 export default function App() {
@@ -45,8 +57,11 @@ export default function App() {
   const [interval_, setInterval_] = useState('5m');
 
   // ---- Agent config ----
-  const [activeAgents, setActiveAgents] = useState(ALL_AGENTS.map(a => a.key));
+  const [activeAgents, setActiveAgents] = useState(
+    ALL_AGENTS.filter(a => a.key !== 'custom').map(a => a.key)
+  );
   const [agentParams, setAgentParams] = useState(JSON.parse(JSON.stringify(DEFAULT_PARAMS)));
+  const [agentFollowers, setAgentFollowers] = useState({ ...DEFAULT_FOLLOWERS });
   const [showSettings, setShowSettings] = useState(false);
 
   // ---- Speed Control ----
@@ -76,13 +91,26 @@ export default function App() {
   // ---- Jump lock (prevent overlapping jump calls) ----
   const jumpingRef = useRef(false);
 
+  // ---- Helpers ----
+
+  /** Merge followers into agentParams before sending to backend */
+  const buildParamsWithFollowers = useCallback(() => {
+    const merged = JSON.parse(JSON.stringify(agentParams));
+    for (const key of Object.keys(agentFollowers)) {
+      if (!merged[key]) merged[key] = {};
+      merged[key].followers = agentFollowers[key];
+    }
+    return merged;
+  }, [agentParams, agentFollowers]);
+
   // ---- Handlers ----
 
   const handleInit = useCallback(async () => {
     setError(null);
     if (autoRef.current) { clearInterval(autoRef.current); autoRef.current = null; }
     try {
-      const data = await initSimulation(ticker, period, interval_, activeAgents, agentParams);
+      const params = buildParamsWithFollowers();
+      const data = await initSimulation(ticker, period, interval_, activeAgents, params);
       if (data.error) {
         setError(data.error);
         setStatus('idle');
@@ -96,7 +124,7 @@ export default function App() {
       setError(err.response?.data?.error || err.message);
       setStatus('idle');
     }
-  }, [ticker, period, interval_, activeAgents, agentParams]);
+  }, [ticker, period, interval_, activeAgents, buildParamsWithFollowers]);
 
   const handleStep = useCallback(async () => {
     setError(null);
@@ -145,9 +173,7 @@ export default function App() {
 
   const handleJump = useCallback(async (targetStep) => {
     setError(null);
-    // Block jumps beyond the highest step ever reached
     if (targetStep > maxReachedStep) return;
-    // Block concurrent jumps
     if (jumpingRef.current) return;
     jumpingRef.current = true;
     if (autoRef.current) { clearInterval(autoRef.current); autoRef.current = null; setStatus('paused'); }
@@ -187,7 +213,6 @@ export default function App() {
   const step = snapshot?.step ?? 0;
   const maxSteps = snapshot?.max_steps ?? 0;
 
-  // Calculate total balance from all agents
   const totalBalance = snapshot?.agents?.reduce((sum, agent) => sum + (agent.portfolio_value || 0), 0) || 0;
 
   return (
@@ -250,9 +275,7 @@ export default function App() {
 
           {/* ── AGENTS TAB ── */}
           {activeTab === 'agents' && (
-            <>
-              <AgentsPanel agents={snapshot?.agents} tradeLog={snapshot?.trade_log} />
-            </>
+            <AgentsPanel agents={snapshot?.agents} tradeLog={snapshot?.trade_log} />
           )}
 
           {/* ── STATS TAB ── */}
@@ -263,6 +286,7 @@ export default function App() {
                 agents={snapshot?.agents}
                 tradeLog={snapshot?.trade_log}
                 regulationLog={snapshot?.regulation_log}
+                marketSummary={snapshot?.market_summary}
               />
               <PerformanceCharts
                 agents={snapshot?.agents}
@@ -272,9 +296,20 @@ export default function App() {
             </>
           )}
 
-          {/* ── HELP TAB ── */}
+          {/* ── INFO TAB ── */}
           {activeTab === 'help' && (
             <HelpPanel />
+          )}
+
+          {/* ── BUILDER TAB ── */}
+          {activeTab === 'builder' && (
+            <BuilderPanel
+              agentParams={agentParams}
+              setAgentParams={setAgentParams}
+              activeAgents={activeAgents}
+              setActiveAgents={setActiveAgents}
+              onApplyAndInit={handleInit}
+            />
           )}
         </main>
 
@@ -288,6 +323,8 @@ export default function App() {
           activeAgents={activeAgents}
           allAgents={ALL_AGENTS}
           toggleAgent={toggleAgent}
+          agentFollowers={agentFollowers}
+          setAgentFollowers={setAgentFollowers}
           onStep={handleStep}
           onAutoRun={handleAutoRun}
           onPause={handlePause}

@@ -5,7 +5,8 @@ const NAV_ITEMS = [
   { id: 'market', icon: '◎', label: 'Market' },
   { id: 'agents', icon: '⬡', label: 'Agents' },
   { id: 'stats',  icon: '◈', label: 'Stats' },
-  { id: 'help',   icon: '?', label: 'Help' },
+  { id: 'builder', icon: '⚙', label: 'Builder' },
+  { id: 'help',   icon: 'ℹ', label: 'Info' },
 ];
 
 export default function LeftSidebar({ activeTab, onTabChange }) {
