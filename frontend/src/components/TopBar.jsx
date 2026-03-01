@@ -13,7 +13,7 @@ export default function TopBar({
   return (
     <header className="olymp-topbar">
       <div className="topbar-left">
-        <div className="logo">◈ MASTER</div>
+        <div className="logo">MASTER</div>
         <div className="stock-selector">
           <select 
             value={ticker} 
@@ -36,7 +36,7 @@ export default function TopBar({
       </div>
 
       <div className="topbar-center">
-        <h1>Multi Agent Stock Market Environment For Research V1</h1>
+        <h1>MASTER — Multi-Agent Stockmarket Trading Environment for Research</h1>
       </div>
 
       <div className="topbar-right">

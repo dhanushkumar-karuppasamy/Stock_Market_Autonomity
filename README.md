@@ -1,4 +1,4 @@
-# Multi-Agent Stock Market AI Autonomity
+# MASTER — Multi-Agent Stockmarket Trading Environment for Research
 
 A simulated financial ecosystem populated by **multiple autonomous trading agents** operating in a shared market. Each agent analyses real market data (via **yfinance**), trades under uncertainty, manages its portfolio & risk, and adapts over time — including an adversarial "whale" agent that attempts pump-and-dump manipulation.
 
