@@ -1,13 +1,15 @@
 import React, { useMemo } from 'react';
 
 const C = {
-  green: '#00ff88',
-  red: '#ff3b5c',
-  cyan: '#00d4ff',
-  amber: '#ffb800',
-  purple: '#a855f7',
-  muted: '#5a6478',
-  text: '#c9d1e0',
+  green: '#4ade80',
+  red: '#f87171',
+  cyan: '#38bdf8',
+  amber: '#fbbf24',
+  purple: '#c084fc',
+  muted: '#64748b',
+  text: '#cbd5e1',
+  heading: '#f1f5f9',
+  border: 'rgba(255,255,255,0.07)',
 };
 
 function fmt(v, d = 2) {
@@ -84,7 +86,7 @@ export default function MarketPanel({ priceHistory, systemRisk, crashActive }) {
         {/* Big price + change */}
         <div style={{ display: 'flex', alignItems: 'baseline', gap: 12, marginBottom: 16 }}>
           <span style={{
-            fontSize: 32, fontWeight: 700, color: '#edf0f7',
+            fontSize: 32, fontWeight: 700, color: '#f1f5f9',
             fontFamily: "'JetBrains Mono', monospace",
           }}>
             ₹{fmt(stats.close)}
@@ -119,7 +121,6 @@ export default function MarketPanel({ priceHistory, systemRisk, crashActive }) {
                     position: 'absolute', top: -3, left: `${pos}%`, transform: 'translateX(-50%)',
                     width: 10, height: 10, borderRadius: '50%',
                     background: up ? C.green : C.red,
-                    boxShadow: `0 0 6px ${up ? C.green : C.red}66`,
                   }} />
                 </>
               );
@@ -181,8 +182,8 @@ export default function MarketPanel({ priceHistory, systemRisk, crashActive }) {
         {stats.sma20 != null && stats.sma50 != null && (
           <div style={{
             marginTop: 10, padding: '8px 12px', borderRadius: 6,
-            background: stats.sma20 > stats.sma50 ? 'rgba(0,255,136,0.06)' : 'rgba(255,59,92,0.06)',
-            border: `1px solid ${stats.sma20 > stats.sma50 ? 'rgba(0,255,136,0.15)' : 'rgba(255,59,92,0.15)'}`,
+            background: stats.sma20 > stats.sma50 ? 'rgba(74,222,128,0.06)' : 'rgba(248,113,113,0.06)',
+            border: `1px solid ${stats.sma20 > stats.sma50 ? 'rgba(74,222,128,0.15)' : 'rgba(248,113,113,0.15)'}`,
             display: 'flex', alignItems: 'center', gap: 8,
             fontFamily: "'JetBrains Mono', monospace", fontSize: 11,
           }}>

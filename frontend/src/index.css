@@ -1,7 +1,7 @@
 /* ================================================================
-   MULTI-AGENT STOCK MARKET AI — NEON TERMINAL UI
-   Fonts: Space Grotesk (headings) · Inter (body) · JetBrains Mono (data)
-   Theme: Deep dark with neon cyan/green accents + glassmorphism
+   MASTER — Multi-Agent Stockmarket Trading Environment for Research
+   Fonts: Inter (body/headings) · JetBrains Mono (data/mono)
+   Theme: Deep dark slate, professional financial terminal
    ================================================================ */
 
 /* ===== Reset & Base ===== */
@@ -21,28 +21,28 @@
   --bg-card-solid: #0e111c;
   --border-subtle: rgba(255, 255, 255, 0.06);
   --border-medium: rgba(255, 255, 255, 0.1);
-  --border-accent: rgba(0, 212, 255, 0.25);
+  --border-accent: rgba(56, 189, 248, 0.2);
   --text-primary: #edf0f7;
   --text-secondary: #8892a8;
   --text-muted: #5a6478;
-  --text-accent: #00d4ff;
-  --neon-cyan: #00d4ff;
-  --neon-green: #00ff88;
-  --neon-purple: #a855f7;
-  --neon-amber: #ffb800;
-  --neon-red: #ff3b5c;
-  --glow-cyan: 0 0 20px rgba(0, 212, 255, 0.15);
-  --glow-green: 0 0 20px rgba(0, 255, 136, 0.15);
-  --glow-red: 0 0 20px rgba(255, 59, 92, 0.15);
-  --glow-purple: 0 0 20px rgba(168, 85, 247, 0.15);
-  --gradient-primary: linear-gradient(135deg, #00d4ff, #a855f7);
-  --gradient-green: linear-gradient(135deg, #00ff88, #00d4ff);
-  --gradient-danger: linear-gradient(135deg, #ff3b5c, #ff8800);
-  --radius-sm: 6px;
-  --radius-md: 10px;
-  --radius-lg: 16px;
-  --radius-xl: 20px;
-  --font-heading: 'Space Grotesk', 'Inter', system-ui, sans-serif;
+  --text-accent: #38bdf8;
+  --neon-cyan: #38bdf8;
+  --neon-green: #4ade80;
+  --neon-purple: #c084fc;
+  --neon-amber: #fbbf24;
+  --neon-red: #f87171;
+  --glow-cyan: 0 2px 8px rgba(56, 189, 248, 0.08);
+  --glow-green: 0 2px 8px rgba(74, 222, 128, 0.08);
+  --glow-red: 0 2px 8px rgba(248, 113, 113, 0.08);
+  --glow-purple: 0 2px 8px rgba(192, 132, 252, 0.08);
+  --gradient-primary: linear-gradient(135deg, #38bdf8, #c084fc);
+  --gradient-green: linear-gradient(135deg, #4ade80, #38bdf8);
+  --gradient-danger: linear-gradient(135deg, #f87171, #fb923c);
+  --radius-sm: 5px;
+  --radius-md: 8px;
+  --radius-lg: 10px;
+  --radius-xl: 12px;
+  --font-heading: 'Inter', system-ui, -apple-system, sans-serif;
   --font-body: 'Inter', system-ui, -apple-system, sans-serif;
   --font-mono: 'JetBrains Mono', 'Fira Code', monospace;
   --transition-fast: 0.15s cubic-bezier(0.4, 0, 0.2, 1);
@@ -65,8 +65,8 @@ body::before {
   position: fixed;
   inset: 0;
   background:
-    radial-gradient(ellipse 80% 50% at 50% -20%, rgba(0, 212, 255, 0.06), transparent),
-    radial-gradient(ellipse 60% 40% at 80% 100%, rgba(168, 85, 247, 0.04), transparent);
+    radial-gradient(ellipse 80% 50% at 50% -20%, rgba(56, 189, 248, 0.03), transparent),
+    radial-gradient(ellipse 60% 40% at 80% 100%, rgba(192, 132, 252, 0.02), transparent);
   pointer-events: none;
   z-index: 0;
 }
@@ -132,13 +132,10 @@ h1, h2, h3, h4 {
 
 .logo {
   font-family: var(--font-heading);
-  font-size: 20px;
+  font-size: 18px;
   font-weight: 700;
-  background: var(--gradient-primary);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-  filter: drop-shadow(0 0 8px rgba(0, 212, 255, 0.3));
+  color: var(--text-primary);
+  letter-spacing: -0.5px;
 }
 
 .stock-selector { display: flex; align-items: center; gap: 8px; }
@@ -202,10 +199,7 @@ h1, h2, h3, h4 {
   font-size: 1.05rem;
   font-weight: 700;
   font-family: var(--font-mono);
-  background: var(--gradient-green);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
+  color: var(--neon-green);
 }
 
 .crash-indicator {
@@ -1063,3 +1057,68 @@ body.theme-light .error-banner { background: rgba(220, 38, 38, 0.06); border-col
 .risk-metrics-grid .risk-metric-card:nth-child(4) { animation-delay: 0.2s; }
 .risk-metrics-grid .risk-metric-card:nth-child(5) { animation-delay: 0.25s; }
 .risk-metrics-grid .risk-metric-card:nth-child(6) { animation-delay: 0.3s; }
+
+/* ===== FOLLOWER CONTROLS (RightTradePanel) ===== */
+.agent-follower-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 0;
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.agent-follower-row:last-child { border-bottom: none; }
+
+.agent-follower-row input[type="checkbox"] {
+  accent-color: var(--neon-cyan);
+  width: 14px;
+  height: 14px;
+  flex-shrink: 0;
+}
+
+.follower-label {
+  flex: 1;
+  font-family: var(--font-mono);
+  font-size: 0.78rem;
+  color: var(--text-secondary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.follower-control {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+.follower-control span {
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  color: var(--text-muted);
+  letter-spacing: 0.5px;
+}
+
+.follower-input {
+  width: 52px;
+  padding: 4px 6px;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-medium);
+  border-radius: var(--radius-sm);
+  color: var(--neon-cyan);
+  font-family: var(--font-mono);
+  font-size: 0.78rem;
+  font-weight: 700;
+  text-align: center;
+  transition: border-color var(--transition-fast);
+}
+
+.follower-input:focus {
+  outline: none;
+  border-color: var(--neon-cyan);
+}
+
+.follower-input:hover {
+  border-color: var(--border-accent);
+}

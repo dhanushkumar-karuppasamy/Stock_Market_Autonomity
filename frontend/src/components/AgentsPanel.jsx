@@ -2,9 +2,10 @@ import React from 'react';
 
 /* ── palette ── */
 const C = {
-  green: '#00ff88', red: '#ff3b5c', cyan: '#00d4ff',
-  amber: '#ffb800', purple: '#a855f7', muted: '#5a6478',
-  text: '#c9d1e0', heading: '#edf0f7',
+  green: '#4ade80', red: '#f87171', cyan: '#38bdf8',
+  amber: '#fbbf24', purple: '#c084fc', muted: '#64748b',
+  text: '#cbd5e1', heading: '#f1f5f9',
+  border: 'rgba(255,255,255,0.07)',
 };
 
 const AGENT_META = {
@@ -176,6 +177,7 @@ export default function AgentsPanel({ agents, tradeLog }) {
         const memResult = mem?.result || null;
         const openSection = expandedSection[agent.name] || null;
         const allocationPct = agent.portfolio_value ? (agent.portfolio_value / INITIAL_CASH) * 100 : 100;
+        const followers = agent.followers ?? 1;
 
         return (
           <div key={agent.name} className="card" style={{
@@ -195,7 +197,7 @@ export default function AgentsPanel({ agents, tradeLog }) {
               </div>
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                  <span style={{ fontSize: 15, fontWeight: 700, color: C.heading, fontFamily: "'Space Grotesk', sans-serif" }}>
+                  <span style={{ fontSize: 15, fontWeight: 700, color: C.heading, fontFamily: "'Inter', system-ui, sans-serif" }}>
                     {agent.name}
                   </span>
                   {isHalted && (
@@ -209,8 +211,17 @@ export default function AgentsPanel({ agents, tradeLog }) {
                       fontFamily: "'JetBrains Mono', monospace" }}>INACTIVE</span>
                   )}
                 </div>
-                <div style={{ fontSize: 10, color: C.muted, fontFamily: "'JetBrains Mono', monospace", marginTop: 2 }}>
-                  {meta.strategy}
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 2 }}>
+                  <span style={{ fontSize: 10, color: C.muted, fontFamily: "'JetBrains Mono', monospace" }}>
+                    {meta.strategy}
+                  </span>
+                  {followers > 1 && (
+                    <span style={{
+                      fontSize: 9, fontWeight: 700, padding: '1px 6px', borderRadius: 3,
+                      background: `${meta.accent}18`, color: meta.accent, border: `1px solid ${meta.accent}33`,
+                      fontFamily: "'JetBrains Mono', monospace",
+                    }}>×{followers} followers</span>
+                  )}
                 </div>
               </div>
               <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 2 }}>
@@ -326,16 +337,55 @@ export default function AgentsPanel({ agents, tradeLog }) {
               </div>
             </div>
 
-            {/* ── Last Reason ── */}
-            {agent.last_reason && (
+            {/* ── Followers + Last Action stat row ── */}
+            <div style={{ display: 'flex', gap: 6, marginBottom: 10, flexWrap: 'wrap' }}>
               <div style={{
-                padding: '8px 10px', borderRadius: 6, marginBottom: 10,
-                background: 'rgba(168,85,247,0.04)', border: '1px solid rgba(168,85,247,0.1)',
-                fontSize: 10, color: C.text, fontStyle: 'italic', lineHeight: 1.6,
-                fontFamily: "'JetBrains Mono', monospace",
+                padding: '4px 10px', borderRadius: 4, fontSize: 10, fontWeight: 600,
+                background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)',
+                color: C.muted, fontFamily: "'JetBrains Mono', monospace",
+                display: 'flex', alignItems: 'center', gap: 4,
               }}>
-                <span style={{ color: C.purple, fontWeight: 600, fontStyle: 'normal' }}>💭 Reasoning: </span>
-                {agent.last_reason}
+                <span style={{ color: meta.accent }}>◈</span>
+                Followers: <span style={{ color: followers > 1 ? meta.accent : C.text }}>{followers}</span>
+              </div>
+              <div style={{
+                padding: '4px 10px', borderRadius: 4, fontSize: 10,
+                background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)',
+                color: C.muted, fontFamily: "'JetBrains Mono', monospace",
+                display: 'flex', alignItems: 'center', gap: 4,
+              }}>
+                W/L: <span style={{ color: C.green }}>{perf.wins ?? 0}</span>/<span style={{ color: C.red }}>{perf.losses ?? 0}</span>
+              </div>
+            </div>
+
+            {/* ── Last Reason (collapsible accordion) ── */}
+            {agent.last_reason && (
+              <div style={{ marginBottom: 10 }}>
+                <button
+                  onClick={() => toggleSection(agent.name, 'reasoning')}
+                  style={{
+                    width: '100%', padding: '6px 10px', borderRadius: 6,
+                    background: openSection === 'reasoning' ? 'rgba(168,85,247,0.08)' : 'rgba(255,255,255,0.03)',
+                    border: `1px solid ${openSection === 'reasoning' ? 'rgba(168,85,247,0.2)' : 'rgba(255,255,255,0.08)'}`,
+                    cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                    fontFamily: "'JetBrains Mono', monospace", fontSize: 10,
+                    color: openSection === 'reasoning' ? C.purple : C.muted, transition: 'all 0.15s',
+                  }}
+                >
+                  <span>💭 Last Reasoning</span>
+                  <span style={{ fontSize: 8 }}>{openSection === 'reasoning' ? '▾' : '▸'}</span>
+                </button>
+                {openSection === 'reasoning' && (
+                  <div style={{
+                    padding: '8px 10px', borderRadius: '0 0 6px 6px',
+                    background: 'rgba(168,85,247,0.04)', border: '1px solid rgba(168,85,247,0.1)',
+                    borderTop: 'none',
+                    fontSize: 10, color: C.text, fontStyle: 'italic', lineHeight: 1.7,
+                    fontFamily: "'JetBrains Mono', monospace",
+                  }}>
+                    {agent.last_reason}
+                  </div>
+                )}
               </div>
             )}
 
@@ -425,7 +475,7 @@ export default function AgentsPanel({ agents, tradeLog }) {
                             <td style={{ padding: '5px 8px' }}>
                               <span style={{
                                 padding: '1px 6px', borderRadius: 3, fontSize: 9, fontWeight: 700,
-                                background: isBuy ? 'rgba(0,255,136,0.1)' : 'rgba(255,59,92,0.1)',
+                                background: isBuy ? 'rgba(74,222,128,0.1)' : 'rgba(248,113,113,0.1)',
                                 color: isBuy ? C.green : C.red,
                               }}>
                                 {isBuy ? '▲ BUY' : '▼ SELL'}
@@ -437,7 +487,7 @@ export default function AgentsPanel({ agents, tradeLog }) {
                             <td style={{ padding: '5px 8px', textAlign: 'center' }}>
                               <span style={{
                                 padding: '1px 6px', borderRadius: 3, fontSize: 8, fontWeight: 700,
-                                background: isBlocked ? 'rgba(255,59,92,0.1)' : 'rgba(0,255,136,0.1)',
+                                background: isBlocked ? 'rgba(248,113,113,0.1)' : 'rgba(74,222,128,0.1)',
                                 color: isBlocked ? C.red : C.green,
                               }}>
                                 {isBlocked ? '✕ BLOCKED' : '✓ OK'}

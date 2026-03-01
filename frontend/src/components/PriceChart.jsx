@@ -8,25 +8,25 @@ import {
   createSeriesMarkers,
 } from 'lightweight-charts';
 
-/* ───────── colour palette (matches index.css neon vars) ───────── */
+/* ───────── colour palette ───────── */
 const C = {
   bg:         '#07080d',
   grid:       'rgba(255,255,255,0.04)',
   border:     'rgba(255,255,255,0.06)',
-  text:       '#5a6478',
-  crosshair:  '#00d4ff',
-  upBody:     '#00ff88',
-  downBody:   '#ff3b5c',
-  upWick:     '#00ff88',
-  downWick:   '#ff3b5c',
-  line:       '#00d4ff',
-  sma20:      '#00ff88',
-  sma50:      '#ffb800',
-  bbMid:      '#a855f7',
-  bbBand:     'rgba(168,85,247,0.35)',
-  buyMarker:  '#00ff88',
-  sellMarker: '#ff3b5c',
-  priceLine:  '#00d4ff',
+  text:       '#64748b',
+  crosshair:  '#38bdf8',
+  upBody:     '#4ade80',
+  downBody:   '#f87171',
+  upWick:     '#4ade80',
+  downWick:   '#f87171',
+  line:       '#38bdf8',
+  sma20:      '#4ade80',
+  sma50:      '#fbbf24',
+  bbMid:      '#c084fc',
+  bbBand:     'rgba(192,132,252,0.25)',
+  buyMarker:  '#4ade80',
+  sellMarker: '#f87171',
+  priceLine:  '#38bdf8',
 };
 
 /* ───────── helpers ───────── */
@@ -116,7 +116,7 @@ function Legend({ ohlc, indicators }) {
       fontFamily: "'JetBrains Mono', monospace", fontSize: 11,
       pointerEvents: 'none', lineHeight: 1.6,
     }}>
-      <span style={{ color: '#edf0f7', fontWeight: 700, marginRight: 4 }}>
+      <span style={{ color: '#f1f5f9', fontWeight: 700, marginRight: 4 }}>
         <span style={{ color: clr }}>{arrow}</span>{' '}
         O<span style={{ color: '#8892a8' }}>{fmt(ohlc.open)}</span>{' '}
         H<span style={{ color: '#8892a8' }}>{fmt(ohlc.high)}</span>{' '}
@@ -354,7 +354,7 @@ export default function PriceChart({
                   padding: '4px 12px', fontSize: 11, fontFamily: "'JetBrains Mono', monospace",
                   fontWeight: 600, border: 'none', cursor: 'pointer',
                   background: mode === 'candle' ? 'rgba(0,212,255,0.15)' : 'transparent',
-                  color: mode === 'candle' ? '#00d4ff' : '#5a6478',
+                  color: mode === 'candle' ? '#38bdf8' : '#64748b',
                   transition: 'all 0.15s',
                 }}
               >
@@ -366,7 +366,7 @@ export default function PriceChart({
                   padding: '4px 12px', fontSize: 11, fontFamily: "'JetBrains Mono', monospace",
                   fontWeight: 600, border: 'none', cursor: 'pointer',
                   background: mode === 'line' ? 'rgba(0,212,255,0.15)' : 'transparent',
-                  color: mode === 'line' ? '#00d4ff' : '#5a6478',
+                  color: mode === 'line' ? '#38bdf8' : '#64748b',
                   transition: 'all 0.15s',
                 }}
               >
@@ -385,7 +385,7 @@ export default function PriceChart({
           <div style={{
             position: 'absolute', inset: 0,
             display: 'flex', alignItems: 'center', justifyContent: 'center',
-            color: '#5a6478', fontFamily: "'JetBrains Mono', monospace", fontSize: 13,
+            color: '#64748b', fontFamily: "'JetBrains Mono', monospace", fontSize: 13,
             background: 'transparent', zIndex: 5,
           }}>
             Initialize a simulation to see the chart ◈
@@ -420,10 +420,10 @@ export default function PriceChart({
             </span>
             <span style={{ fontWeight: 600 }}>{latest.action}</span>
             <span style={{ color: '#8892a8' }}>·</span>
-            <span style={{ color: '#c9d1e0' }}>{latest.agent_name}</span>
+            <span style={{ color: '#cbd5e1' }}>{latest.agent_name}</span>
             <span style={{ color: '#8892a8' }}>·</span>
             <span style={{ color: '#8892a8' }}>{latest.quantity} @ ₹{latest.price?.toFixed(2)}</span>
-            <span style={{ color: '#5a6478', marginLeft: 'auto', fontSize: 10 }}>Step {latest.step}</span>
+            <span style={{ color: '#64748b', marginLeft: 'auto', fontSize: 10 }}>Step {latest.step}</span>
           </div>
         );
       })()}

@@ -4,7 +4,7 @@ import {
   CartesianGrid, BarChart, Bar,
 } from 'recharts';
 
-const COLORS = ['#00d4ff', '#00ff88', '#ffb800', '#a855f7', '#ff3b5c'];
+const COLORS = ['#38bdf8', '#4ade80', '#fbbf24', '#c084fc', '#f87171'];
 
 export default function PerformanceCharts({ agents, tradeLog, regulationLog }) {
   // --- Portfolio value over time (multi-line) ---
@@ -46,9 +46,9 @@ export default function PerformanceCharts({ agents, tradeLog, regulationLog }) {
           <ResponsiveContainer width="100%" height={280}>
             <LineChart data={portfolioData} margin={{ top: 5, right: 20, bottom: 5, left: 10 }}>
               <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
-              <XAxis dataKey="step" tick={{ fill: '#5a6478', fontSize: 11, fontFamily: 'JetBrains Mono, monospace' }} />
-              <YAxis domain={['auto', 'auto']} tick={{ fill: '#5a6478', fontSize: 11, fontFamily: 'JetBrains Mono, monospace' }} />
-              <Tooltip contentStyle={{ background: 'rgba(14,17,28,0.95)', border: '1px solid rgba(0,212,255,0.2)', fontSize: 12, borderRadius: 8, fontFamily: 'JetBrains Mono, monospace' }} />
+              <XAxis dataKey="step" tick={{ fill: '#64748b', fontSize: 11, fontFamily: 'JetBrains Mono, monospace' }} />
+              <YAxis domain={['auto', 'auto']} tick={{ fill: '#64748b', fontSize: 11, fontFamily: 'JetBrains Mono, monospace' }} />
+              <Tooltip contentStyle={{ background: 'rgba(14,17,28,0.95)', border: '1px solid rgba(56,189,248,0.2)', fontSize: 12, borderRadius: 8, fontFamily: 'JetBrains Mono, monospace' }} />
               <Legend wrapperStyle={{ fontSize: 12 }} />
               {agentNames.map((name, i) => (
                 <Line
@@ -74,10 +74,10 @@ export default function PerformanceCharts({ agents, tradeLog, regulationLog }) {
           <ResponsiveContainer width="100%" height={280}>
             <BarChart data={violationData} margin={{ top: 5, right: 20, bottom: 5, left: 10 }}>
               <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
-              <XAxis dataKey="name" tick={{ fill: '#5a6478', fontSize: 11, fontFamily: 'JetBrains Mono, monospace' }} />
-              <YAxis tick={{ fill: '#5a6478', fontSize: 11, fontFamily: 'JetBrains Mono, monospace' }} />
-              <Tooltip contentStyle={{ background: 'rgba(14,17,28,0.95)', border: '1px solid rgba(0,212,255,0.2)', fontSize: 12, borderRadius: 8, fontFamily: 'JetBrains Mono, monospace' }} />
-              <Bar dataKey="violations" fill="#ff3b5c" radius={[4, 4, 0, 0]} />
+              <XAxis dataKey="name" tick={{ fill: '#64748b', fontSize: 11, fontFamily: 'JetBrains Mono, monospace' }} />
+              <YAxis tick={{ fill: '#64748b', fontSize: 11, fontFamily: 'JetBrains Mono, monospace' }} />
+              <Tooltip contentStyle={{ background: 'rgba(14,17,28,0.95)', border: '1px solid rgba(56,189,248,0.2)', fontSize: 12, borderRadius: 8, fontFamily: 'JetBrains Mono, monospace' }} />
+              <Bar dataKey="violations" fill="#f87171" radius={[4, 4, 0, 0]} />
             </BarChart>
           </ResponsiveContainer>
         )}
