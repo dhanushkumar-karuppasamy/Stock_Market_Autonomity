@@ -36,6 +36,7 @@ from agents.momentum_agent import MomentumAgent
 from agents.mean_reversion_agent import MeanReversionAgent
 from agents.noise_trader import NoiseTrader
 from agents.adversarial_agent import AdversarialAgent
+from agents.custom_agent import CustomAgent
 from regulator.regulator import RegulatorAgent
 from logging_utils.logger import SimulationLogger
 from db import SimulationDB
@@ -50,6 +51,7 @@ AGENT_REGISTRY = {
     "meanreversion": MeanReversionAgent,
     "noisetrader": NoiseTrader,
     "adversarial": AdversarialAgent,
+    "custom": CustomAgent,
 }
 
 AGENT_DISPLAY_NAMES = {
@@ -58,6 +60,7 @@ AGENT_DISPLAY_NAMES = {
     "meanreversion": "MeanReversion",
     "noisetrader": "NoiseTrader",
     "adversarial": "Adversarial",
+    "custom": "Custom",
 }
 
 
@@ -198,7 +201,9 @@ class OrchestratorAgent:
             display = AGENT_DISPLAY_NAMES[key]
             cls = AGENT_REGISTRY[key]
             params = self._agent_params.get(key, {})
-            agent = cls(display, initial_cash=100_000.0, params=params)
+            # Allow the Custom agent to carry a user-defined display name
+            agent_name = params.get("name", display) if key == "custom" else display
+            agent = cls(agent_name, initial_cash=100_000.0, params=params)
             agent.active = key in self._active_agent_keys
             self.agents.append(agent)
 
@@ -391,11 +396,13 @@ class OrchestratorAgent:
             adj_qty = adjusted.get("quantity", 0)
 
             # Accumulate net volume for endogenous price impact
+            # Followers multiply impact only — portfolio trades at original qty
             if reg_decision != "BLOCK" and adj_qty > 0:
+                effective_qty = adj_qty * max(1, getattr(agent, "followers", 1))
                 if adj_type == "BUY":
-                    net_volume += adj_qty
+                    net_volume += effective_qty
                 elif adj_type == "SELL":
-                    net_volume -= adj_qty
+                    net_volume -= effective_qty
 
             # Record trade marker for chart overlay
             if adj_type in ("BUY", "SELL") and adj_qty > 0 and reg_decision != "BLOCK":
@@ -554,7 +561,9 @@ class OrchestratorAgent:
             display = AGENT_DISPLAY_NAMES[key]
             cls = AGENT_REGISTRY[key]
             params = self._agent_params.get(key, {})
-            agent = cls(display, initial_cash=100_000.0, params=params)
+            # Allow the Custom agent to carry a user-defined display name
+            agent_name = params.get("name", display) if key == "custom" else display
+            agent = cls(agent_name, initial_cash=100_000.0, params=params)
             agent.active = key in self._active_agent_keys
             self.agents.append(agent)
 
@@ -787,6 +796,108 @@ class OrchestratorAgent:
         }
 
     # ------------------------------------------------------------------ #
+    # Humanized Market Summary (Part 4)
+    # ------------------------------------------------------------------ #
+
+    def generate_market_summary(self) -> str:
+        """
+        Produce a plain-English narrative of the current simulation state.
+        Strictly rule-based – no LLMs or external calls.
+        """
+        if not self.agents or self.market is None:
+            return "Simulation not yet started."
+
+        trade_log = self.logger.get_trade_log()
+        reg_log = self.logger.get_regulation_log()
+
+        # Tally volume × followers per agent
+        agent_impact: dict[str, float] = {}
+        agent_buys: dict[str, int] = {}
+        agent_sells: dict[str, int] = {}
+        agent_followers: dict[str, int] = {}
+
+        for agent in self.agents:
+            agent_followers[agent.name] = max(1, getattr(agent, "followers", 1))
+            agent_impact[agent.name] = 0.0
+            agent_buys[agent.name] = 0
+            agent_sells[agent.name] = 0
+
+        for entry in trade_log:
+            name = entry.get("agent_name", "")
+            action = entry.get("action", "")
+            qty = entry.get("quantity", 0) or 0
+            followers = agent_followers.get(name, 1)
+            if action in ("BUY", "SELL"):
+                agent_impact[name] = agent_impact.get(name, 0) + qty * followers
+            if action == "BUY":
+                agent_buys[name] = agent_buys.get(name, 0) + 1
+            elif action == "SELL":
+                agent_sells[name] = agent_sells.get(name, 0) + 1
+
+        # Find highest-impact agent
+        top_agent = max(agent_impact, key=lambda k: agent_impact[k], default=None)
+        top_impact = agent_impact.get(top_agent, 0)
+
+        # Count violations per agent
+        violations_by_agent: dict[str, int] = {}
+        for entry in reg_log:
+            name = entry.get("agent_name", "SYSTEM")
+            violations_by_agent[name] = violations_by_agent.get(name, 0) + 1
+
+        most_violated_agent = max(violations_by_agent, key=lambda k: violations_by_agent[k], default=None)
+        violation_count = violations_by_agent.get(most_violated_agent, 0) if most_violated_agent else 0
+
+        # Find best / worst performer
+        close = self.market.current_price
+        returns = {
+            a.name: ((a.get_portfolio_value(close, self.ticker) - a.initial_cash) / a.initial_cash * 100)
+            for a in self.agents if a.active
+        }
+        best = max(returns, key=lambda k: returns[k], default=None)
+        worst = min(returns, key=lambda k: returns[k], default=None)
+
+        # Build narrative
+        parts: list[str] = []
+
+        step_word = "step" if self.current_step == 1 else "steps"
+        parts.append(f"After {self.current_step} {step_word} of trading on {self.ticker}:")
+
+        if top_agent and top_impact > 0:
+            followers_n = agent_followers.get(top_agent, 1)
+            direction = "bullish" if agent_buys.get(top_agent, 0) >= agent_sells.get(top_agent, 0) else "bearish"
+            follower_note = f", backed by {followers_n} follower{'s' if followers_n != 1 else ''}" if followers_n > 1 else ""
+            parts.append(
+                f"The {top_agent} strategy{follower_note} had the largest market impact "
+                f"({int(top_impact):,} effective volume units, {direction} net bias)."
+            )
+
+        if best and worst and best != worst:
+            best_ret = returns.get(best, 0)
+            worst_ret = returns.get(worst, 0)
+            parts.append(
+                f"{best} leads the pack at {best_ret:+.1f}% return, "
+                f"while {worst} trails at {worst_ret:+.1f}%."
+            )
+
+        if most_violated_agent and violation_count > 0:
+            parts.append(
+                f"{most_violated_agent} triggered {violation_count} regulatory violation{'s' if violation_count != 1 else ''}."
+            )
+
+        if self.trading_halted:
+            parts.append("⚠ A global circuit breaker has halted all trading.")
+        elif self.crash_active:
+            parts.append("⚠ A market crash event is currently active.")
+
+        if self.circuit_breakers_active:
+            parts.append(
+                f"{self.circuit_breakers_active} agent{'s are' if self.circuit_breakers_active > 1 else ' is'} "
+                f"halted by individual circuit breakers."
+            )
+
+        return " ".join(parts) if parts else "Simulation running normally."
+
+    # ------------------------------------------------------------------ #
     # Snapshot for frontend
     # ------------------------------------------------------------------ #
 
@@ -854,4 +965,6 @@ class OrchestratorAgent:
                 "HALTED_BY_CIRCUIT_BREAKER" if self.trading_halted else "ACTIVE"
             ),
             "circuit_breakers_active": self.circuit_breakers_active,
+            # Humanized narrative summary
+            "market_summary": self.generate_market_summary(),
         }
