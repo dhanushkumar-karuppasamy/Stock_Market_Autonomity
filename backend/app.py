@@ -1,5 +1,5 @@
 """
-Flask API for the Multi-Agent Stock Market AI Autonomity simulation.
+Flask API for MASTER — Multi-Agent Stockmarket Trading Environment for Research.
 
 DevHack 2026 Phase-1 architecture:
 
@@ -184,5 +184,5 @@ def get_state():
 # Run
 # ------------------------------------------------------------------ #
 if __name__ == "__main__":
-    print("Starting Multi-Agent Stock Market AI server on http://localhost:5000")
-    app.run(host="0.0.0.0", port=5000, debug=True)
+    print("Starting MASTER server on http://localhost:5001")
+    app.run(host="0.0.0.0", port=5001, debug=True, use_reloader=False)
