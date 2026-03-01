@@ -51,6 +51,7 @@ class TradingAgent:
         self.halted: bool = False
         self.active: bool = True
         self._peak_value: float = initial_cash
+        self.followers: int = 1  # number of identical traders using this strategy
         
         # Agentic Architecture additions
         self.memory: list[dict] = []
@@ -325,4 +326,5 @@ class TradingAgent:
             "memory_size": len(self.memory),
             "latest_memory": latest_memory,
             "performance_stats": perf,
+            "followers": self.followers,
         }

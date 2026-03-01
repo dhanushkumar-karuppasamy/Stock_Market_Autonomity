@@ -37,6 +37,7 @@ class NoiseTrader(TradingAgent):
         params = params or {}
         self.TRADE_PROBABILITY = params.get("trade_probability", 0.15)
         self.POSITION_FRACTION = params.get("position_size_pct", 0.02)
+        self.followers = int(params.get("followers", 1))
 
     def perceive(self, market_state: dict) -> dict:
         super().perceive(market_state)

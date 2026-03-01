@@ -37,6 +37,7 @@ class ConservativeAgent(TradingAgent):
         self.VOLATILITY_THRESHOLD = params.get("volatility_threshold", 0.02)
         self.POSITION_FRACTION = params.get("risk_pct", 0.07)
         self.STOP_LOSS_PCT = params.get("stop_loss_pct", 0.03)
+        self.followers = int(params.get("followers", 1))
 
     def perceive(self, market_state: dict) -> dict:
         super().perceive(market_state)

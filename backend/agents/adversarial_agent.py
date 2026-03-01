@@ -43,6 +43,7 @@ class AdversarialAgent(TradingAgent):
         self.DUMP_THRESHOLD = params.get("dump_threshold", 0.03)
         self.VOLUME_LOW_PCTILE = params.get("volume_low_pctile", 0.30)
         self.PUMP_PROBABILITY = params.get("pump_probability", 0.20)
+        self.followers = int(params.get("followers", 1))
         self._volume_history: list[float] = []
         self._phase = "idle"  # "idle" | "pumping" | "ready_to_dump"
 

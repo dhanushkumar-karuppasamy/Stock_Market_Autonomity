@@ -34,6 +34,7 @@ class MeanReversionAgent(TradingAgent):
         params = params or {}
         self.POSITION_FRACTION = params.get("position_size_pct", 0.12)
         self.BAND_MULTIPLIER = params.get("band_multiplier", 2.0)
+        self.followers = int(params.get("followers", 1))
 
     def perceive(self, market_state: dict) -> dict:
         super().perceive(market_state)

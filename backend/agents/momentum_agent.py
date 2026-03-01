@@ -32,6 +32,7 @@ class MomentumAgent(TradingAgent):
         super().__init__(name, initial_cash)
         params = params or {}
         self.POSITION_FRACTION = params.get("position_size_pct", 0.15)
+        self.followers = int(params.get("followers", 1))
 
     def perceive(self, market_state: dict) -> dict:
         super().perceive(market_state)
